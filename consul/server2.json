@@ -6,7 +6,7 @@
     },
     "data_dir": "/consul/data",
     "addresses": {
-        "http" : "0.0.0.0"
+        "http" : "161.97.88.95"
     },
     "retry_join":[
         "consul-server1",

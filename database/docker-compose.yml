@@ -58,11 +58,45 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  mongodb-server:
+    image: mongo
+    container_name: Mongo-Server
+    restart: on-failure
+    environment: 
+      - MONGO_INITDB_ROOT_USERNAME=appuser
+      - MONGO_INITDB_ROOT_PASSWORD=P@ssword1
+    ports: 
+      - 27017:27017    
+    volumes:
+      - mongo-data:/data/db
+
+  mongo-express:
+    image: mongo-Express
+    container_name: Mongo-Express
+    restart: on-failure
+    ports:
+      - 8080:8081
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=appuser
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=P@ssword1
+      - ME_CONFIG_MONGODB_SERVER=mongodb-server
+
+  redis-server:
+    image: redis
+    container_name: Redis-Server
+    restart: on-failure
+    ports: 
+      - 6379:6379    
+    volumes:
+      - redis-data:/data
+
 
 volumes:
   mariadb:
   pgdata:
   mysqldata:
+  mongo-data:
+  redis-data:
 
 networks:
   consul:
