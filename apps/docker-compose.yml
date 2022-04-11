@@ -1,22 +1,41 @@
 version: '3.8'
 
 services:
-  reverse-proxy-server:
-    image: jc21/nginx-proxy-manager:latest
-    container_name: Reverse-Proxy-Server
-    restart: unless-stopped
-    ports:
-      - '80:80'
-      - '81:81'
-      - '443:443'
-    volumes:
-      - ./data:/data
-      - ./letsencrypt:/etc/letsencrypt
-
-
-  # adminer:
-  #   container_name: adminer-test
-  #   image: adminer
+  # reverse-proxy-server:
+  #   image: jc21/nginx-proxy-manager:latest
+  #   container_name: Reverse-Proxy-Server
   #   restart: always
   #   ports:
-  #     - 9090:8080
+  #     - '80:80'
+  #     - '81:81'
+  #     - '443:443'
+  #   volumes:
+  #     - ./data:/data
+  #     - ./letsencrypt:/etc/letsencrypt
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    restart: always
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=user@mail.com
+      - PGADMIN_DEFAULT_PASSWORD=P@ssword1
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/root/.pgadmin
+
+  portainer:
+    image: portainer/portainer-ce
+    container_name: portainer
+    restart: always
+    ports:
+      - "8080:8000"
+      - "9443:9443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+
+volumes:
+  pgadmin_data:
+  portainer_data:

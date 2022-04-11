@@ -1,55 +1,55 @@
 # Please refer https://aka.ms/HTTPSinContainer on how to setup an https developer certificate for your ASP .NET Core service.
 
-version: '3.8'
+version: '3.7'
 
 services:
-  mariadb-server:
-    image: mariadb
-    container_name: Mariadb-Server
-    # command: --default-authentication-plugin=mysql_native_password
-    restart: on-failure
-    command: --lower_case_table_names=2
-    environment: 
-      - MYSQL_USER=appuser
-      - MYSQL_PASSWORD=P@ssword1
-      - MYSQL_ROOT_PASSWORD=P@ssword1
-      # - MYSQL_DATABASE=DockerTest-Dev    
-    ports:
-      - 3306:3306
-    volumes:
-    - mariadb:/var/lib/mysql
+  # mariadb-server:
+  #   image: mariadb
+  #   container_name: Mariadb-Server
+  #   # command: --default-authentication-plugin=mysql_native_password
+  #   restart: on-failure
+  #   command: --lower_case_table_names=2
+  #   environment: 
+  #     - MYSQL_USER=appuser
+  #     - MYSQL_PASSWORD=P@ssword1
+  #     - MYSQL_ROOT_PASSWORD=P@ssword1
+  #     # - MYSQL_DATABASE=DockerTest-Dev    
+  #   ports:
+  #     - 3306:3306
+  #   volumes:
+  #   - mariadb:/var/lib/mysql
 
-  mssql-server:
-    image: mcr.microsoft.com/mssql/server:2019-latest
-    container_name: MSSQL-Server
-    restart: on-failure
-    environment: 
-      - ACCEPT_EULA=Y
-      - SA_PASSWORD=P@ssword1
-      - MSSQL_PID=Express       
-    ports: 
-      - 1433:1433  
+  # mssql-server:
+  #   image: mcr.microsoft.com/mssql/server:2019-latest
+  #   container_name: MSSQL-Server
+  #   restart: on-failure
+  #   environment: 
+  #     - ACCEPT_EULA=Y
+  #     - SA_PASSWORD=P@ssword1
+  #     - MSSQL_PID=Express       
+  #   ports: 
+  #     - 1433:1433  
 
-  mysql-server:
-    image: library/mysql:8.0.23
-    container_name: MySQL-Server
-    command: --default-authentication-plugin=mysql_native_password
-    restart: on-failure
-    environment: 
-      - MYSQL_RANDOM_ROOT_PASSWORD=1
-      - MYSQL_USER=appuser
-      - MYSQL_PASSWORD=Password1
-      - MYSQL_ROOT_PASSWORD=Password1
-    ports:
-      - 3307:3306
-    volumes:
-      - mysqldata:/var/lib/mysql
-      - ./_MySQL_Init_Script:/docker-entrypoint-initdb.d
+  # mysql-server:
+  #   image: library/mysql:8.0.23
+  #   container_name: MySQL-Server
+  #   command: --default-authentication-plugin=mysql_native_password
+  #   restart: on-failure
+  #   environment: 
+  #     - MYSQL_RANDOM_ROOT_PASSWORD=1
+  #     - MYSQL_USER=appuser
+  #     - MYSQL_PASSWORD=Password1
+  #     - MYSQL_ROOT_PASSWORD=Password1
+  #   ports:
+  #     - 3307:3306
+  #   volumes:
+  #     - mysqldata:/var/lib/mysql
+  #     - ./_MySQL_Init_Script:/docker-entrypoint-initdb.d
 
   postgres-server:
     image: postgres
     container_name: Postgres-Server
-    restart: on-failure
+    restart: always
     environment: 
       - POSTGRES_USER=appuser
       - POSTGRES_PASSWORD=P@ssword1
@@ -61,30 +61,30 @@ services:
   mongodb-server:
     image: mongo
     container_name: Mongo-Server
-    restart: on-failure
+    restart: always
     environment: 
       - MONGO_INITDB_ROOT_USERNAME=appuser
-      - MONGO_INITDB_ROOT_PASSWORD=P@ssword1
+      - MONGO_INITDB_ROOT_PASSWORD=Password1
     ports: 
       - 27017:27017    
     volumes:
       - mongo-data:/data/db
 
-  mongo-express:
-    image: mongo-Express
-    container_name: Mongo-Express
-    restart: on-failure
-    ports:
-      - 8080:8081
-    environment:
-      - ME_CONFIG_MONGODB_ADMINUSERNAME=appuser
-      - ME_CONFIG_MONGODB_ADMINPASSWORD=P@ssword1
-      - ME_CONFIG_MONGODB_SERVER=mongodb-server
+  # mongo-express:
+  #   image: mongo-Express
+  #   container_name: Mongo-Express
+  #   restart: on-failure
+  #   ports:
+  #     - 8080:8081
+  #   environment:
+  #     - ME_CONFIG_MONGODB_ADMINUSERNAME=appuser
+  #     - ME_CONFIG_MONGODB_ADMINPASSWORD=P@ssword1
+  #     - ME_CONFIG_MONGODB_SERVER=mongodb-server
 
   redis-server:
     image: redis
     container_name: Redis-Server
-    restart: on-failure
+    restart: always
     ports: 
       - 6379:6379    
     volumes:
@@ -92,12 +92,6 @@ services:
 
 
 volumes:
-  mariadb:
   pgdata:
-  mysqldata:
   mongo-data:
   redis-data:
-
-networks:
-  consul:
-    driver: bridge
