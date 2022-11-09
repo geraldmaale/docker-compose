@@ -2,7 +2,7 @@ services:
   # Seq for logging
   seq:
     image: datalust/seq
-    container_name: seq
+    container_name: seq-server
     restart: unless-stopped
     environment:
       - ACCEPT_EULA=Y
@@ -11,20 +11,20 @@ services:
     volumes:
       - seq_data:/data
 
-  es01:
-    image: elasticsearch:7.13.4
-    container_name: es01
-    restart: always    
-    environment:
-      - node.name=es01
-      - ES_JAVA_OPTS=-"Xms512m -Xmx512m"
-      - boostrap.memory_lock=true
-    volumes:
-      - data01:/usr/share/elasticsearch/data
-    ports:
-      - 9200:9200
-    networks:
-      - elastic
+  # es01:
+  #   image: elasticsearch:7.13.4
+  #   container_name: es01
+  #   restart: always    
+  #   environment:
+  #     - node.name=es01
+  #     - ES_JAVA_OPTS=-"Xms512m -Xmx512m"
+  #     - boostrap.memory_lock=true
+  #   volumes:
+  #     - data01:/usr/share/elasticsearch/data
+  #   ports:
+  #     - 9200:9200
+  #   networks:
+  #     - elastic
 
   # es01:
   #   image: docker.elastic.co/elasticsearch/elasticsearch:8.1.2
@@ -72,17 +72,17 @@ services:
   #   networks:
   #     - elastic
 
-  kibana:
-    image: kibana:7.13.4
-    container_name: kib01
-    restart: always
-    ports:
-      - 5601:5601
-    environment:
-      ELASTICSEARCH_URL: http://es01:9200
-      ELASTICSEARCH_HOSTS: http://es01:9200
-    networks:
-      - elastic
+  # kibana:
+  #   image: kibana:7.13.4
+  #   container_name: kib01
+  #   restart: always
+  #   ports:
+  #     - 5601:5601
+  #   environment:
+  #     ELASTICSEARCH_URL: http://es01:9200
+  #     ELASTICSEARCH_HOSTS: http://es01:9200
+  #   networks:
+  #     - elastic
 
 volumes:
   seq_data:
@@ -93,6 +93,6 @@ volumes:
   # data02:
   #   driver: local
 
-networks:
-  elastic:
-    driver: bridge
+# networks:
+#   elastic:
+#     driver: bridge

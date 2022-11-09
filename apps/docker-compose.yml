@@ -13,29 +13,29 @@ services:
   #     - ./data:/data
   #     - ./letsencrypt:/etc/letsencrypt
 
-  pgadmin:
-    image: dpage/pgadmin4
-    container_name: pgadmin
-    restart: always
-    environment:
-      - PGADMIN_DEFAULT_EMAIL=user@mail.com
-      - PGADMIN_DEFAULT_PASSWORD=P@ssword1
-    ports:
-      - "5050:80"
-    volumes:
-      - pgadmin_data:/root/.pgadmin
+  # pgadmin:
+  #   image: dpage/pgadmin4
+  #   container_name: pgadmin
+  #   restart: always
+  #   environment:
+  #     - PGADMIN_DEFAULT_EMAIL=user@mail.com
+  #     - PGADMIN_DEFAULT_PASSWORD=P@ssword1
+  #   ports:
+  #     - "5050:80"
+  #   volumes:
+  #     - pgadmin_data:/root/.pgadmin
 
   portainer:
     image: portainer/portainer-ce
     container_name: portainer
     restart: always
     ports:
-      - "8080:8000"
+      - "8000:8000"
       - "9443:9443"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - portainer_data:/data
 
 volumes:
-  pgadmin_data:
+  # pgadmin_data:
   portainer_data:
