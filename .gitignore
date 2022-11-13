@@ -1,2 +1,3 @@
-dashboard/**/
+dashboard/homer/
+dashboard/heimdall/
 traefik-stack/.letsencrypt/
