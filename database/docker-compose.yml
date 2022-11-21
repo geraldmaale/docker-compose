@@ -1,5 +1,3 @@
-# Please refer https://aka.ms/HTTPSinContainer on how to setup an https developer certificate for your ASP .NET Core service.
-
 version: '3.7'
 
 services:
@@ -47,7 +45,7 @@ services:
   #     - ./_MySQL_Init_Script:/docker-entrypoint-initdb.d
 
   postgres-server:
-    image: postgres
+    image: postgres:14.6
     container_name: Postgres-Server
     restart: always
     environment: 
@@ -59,7 +57,7 @@ services:
       - pgdata:/var/lib/postgresql/data
 
   mongodb-server:
-    image: mongo
+    image: mongo:6.0.3
     container_name: Mongo-Server
     restart: always
     environment: 
@@ -82,7 +80,7 @@ services:
   #     - ME_CONFIG_MONGODB_SERVER=mongodb-server
 
   redis-server:
-    image: redis
+    image: redis:7.0.5
     container_name: Redis-Server
     restart: always
     ports: 
@@ -90,27 +88,23 @@ services:
     volumes:
       - redis-data:/data
 
-  rabbitmq-server:
-    image: masstransit/rabbitmq # rabbitmq:3.9-management
-    container_name: rabbitmq-server
-    hostname: rabbitmq-server
-    restart: always
-    # environment:
-    #   - RABBITMQ_DEFAULT_USER=appuser
-    #   - RABBITMQ_DEFAULT_PASS=Pa$$word1
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    volumes:
-      - rabbitmq-data:/var/lib/rabbitmq
-    networks:
-      - rabbitmqnetwork
+  # rabbitmq-server:
+  #   image: masstransit/rabbitmq # rabbitmq:3.9-management
+  #   container_name: rabbitmq-server
+  #   hostname: rabbitmq-server
+  #   restart: always
+  #   # environment:
+  #   #   - RABBITMQ_DEFAULT_USER=appuser
+  #   #   - RABBITMQ_DEFAULT_PASS=Pa$$word1
+  #   ports:
+  #     - "5672:5672"
+  #     - "15672:15672"
+  #   volumes:
+  #     - rabbitmq-data:/var/lib/rabbitmq
+  #   networks:
+  #     - rabbitmqnetwork
 
 volumes:
   pgdata:
   mongo-data:
   redis-data:
-  rabbitmq-data:
-
-networks:
-  rabbitmqnetwork:

@@ -27,9 +27,9 @@ services:
       - "traefik.http.middlewares.traefik-auth.basicauth.users=gematmail@gmail.com:$$apr1$$tSgdFvEU$$wtMyhIhvKN3xYDocs8byV/"
       - "traefik.http.middlewares.traefik-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.routers.traefik.middlewares=traefik-https-redirect"
+      - "traefik.http.routers.traefik-secure.middlewares=traefik-auth"
       - "traefik.http.routers.traefik-secure.entrypoints=https"
       - "traefik.http.routers.traefik-secure.rule=Host(`traefik.ideaslab.com`)"
-      - "traefik.http.routers.traefik-secure.middlewares=traefik-auth"
       - "traefik.http.routers.traefik-secure.tls=true"
       - "traefik.http.routers.traefik-secure.tls.certresolver=staging"
       - "traefik.http.routers.traefik-secure.service=api@internal"
@@ -86,6 +86,54 @@ services:
       - "traefik.http.services.pgadmin.loadbalancer.server.port=80"
       - "traefik.docker.network=proxy"
 
+  uptime-kuma:
+    image: louislam/uptime-kuma:latest
+    container_name: uptime-kuma
+    restart: unless-stopped
+    networks:
+      - proxy
+    volumes:
+      - uptime_kuma_data:/app/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.uptime-kuma.entrypoints=https"
+      - "traefik.http.routers.uptime-kuma.rule=Host(`uptime-kuma.ideaslab.com`)"
+      - "traefik.http.middlewares.uptime-kuma-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.uptime-kuma.middlewares=uptime-kuma-https-redirect"
+      - "traefik.http.routers.uptime-kuma-secure.entrypoints=https"
+      - "traefik.http.routers.uptime-kuma-secure.rule=Host(`uptime-kuma.ideaslab.com`)"
+      - "traefik.http.routers.uptime-kuma-secure.tls=true"
+      - "traefik.http.routers.uptime-kuma-secure.tls.certresolver=staging"
+      - "traefik.http.routers.uptime-kuma-secure.service=uptime-kuma"
+      - "traefik.http.services.uptime-kuma.loadbalancer.server.port=3001"
+      - "traefik.docker.network=proxy"
+
+  seq:
+    image: datalust/seq
+    container_name: seq-server
+    restart: unless-stopped
+    environment:
+      - ACCEPT_EULA=Y
+    ports:
+      - "5341:80"
+    volumes:
+      - seq_data:/data
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.seq.entrypoints=https"
+      - "traefik.http.routers.seq.rule=Host(`seq.ideaslab.com`)"
+      - "traefik.http.middlewares.seq-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.seq.middlewares=seq-https-redirect"
+      - "traefik.http.routers.seq-secure.entrypoints=https"
+      - "traefik.http.routers.seq-secure.rule=Host(`seq.ideaslab.com`)"
+      - "traefik.http.routers.seq-secure.tls=true"
+      - "traefik.http.routers.seq-secure.tls.certresolver=staging"
+      - "traefik.http.routers.seq-secure.service=seq"
+      - "traefik.http.services.seq.loadbalancer.server.port=5341"
+      - "traefik.docker.network=proxy"
+
 networks:
   proxy:
     external: true
@@ -93,4 +141,5 @@ networks:
 volumes:
   portainer_data:
   pgadmin_data:
-  
+  uptime_kuma_data:
+  seq_data:
