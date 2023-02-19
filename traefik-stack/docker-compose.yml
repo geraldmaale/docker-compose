@@ -114,12 +114,12 @@ services:
     restart: unless-stopped
     environment:
       - ACCEPT_EULA=Y
-    ports:
-      - "5341:80"
     volumes:
       - seq_data:/data
     networks:
       - proxy
+    ports:
+      - 5555:80
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.seq.entrypoints=https"
@@ -131,7 +131,36 @@ services:
       - "traefik.http.routers.seq-secure.tls=true"
       - "traefik.http.routers.seq-secure.tls.certresolver=staging"
       - "traefik.http.routers.seq-secure.service=seq"
-      - "traefik.http.services.seq.loadbalancer.server.port=5341"
+      - "traefik.http.services.seq.loadbalancer.server.port=80"
+      - "traefik.docker.network=proxy"
+
+  heimdall:
+    image: linuxserver/heimdall:2.4.15
+    container_name: heimdall
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Shanghai
+    volumes:
+      - ./heimdall/config:/config
+    # ports:
+    #   - 7080:80
+    #   - 7443:443
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.heimdall.entrypoints=https"
+      - "traefik.http.routers.heimdall.rule=Host(`heimdall.ideaslab.com`)"
+      - "traefik.http.middlewares.heimdall-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.heimdall.middlewares=heimdall-https-redirect"
+      - "traefik.http.routers.heimdall-secure.entrypoints=https"
+      - "traefik.http.routers.heimdall-secure.rule=Host(`heimdall.ideaslab.com`)"
+      - "traefik.http.routers.heimdall-secure.tls=true"
+      - "traefik.http.routers.heimdall-secure.tls.certresolver=staging"
+      - "traefik.http.routers.heimdall-secure.service=heimdall"
+      - "traefik.http.services.heimdall.loadbalancer.server.port=80"
       - "traefik.docker.network=proxy"
 
 networks:

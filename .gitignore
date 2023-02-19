@@ -2,3 +2,8 @@ dashboard/homer/
 dashboard/heimdall/
 traefik-stack/.letsencrypt/
 observability/output/
+grafana/.data
+grafana/output
+signoz/docker/clickhouse-setup/data/
+**/__pycache__/
+signoz/docker-swarm/clickhouse-setup/**/

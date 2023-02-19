@@ -17,16 +17,18 @@ services:
   #   volumes:
   #   - mariadb:/var/lib/mysql
 
-  # mssql-server:
-  #   image: mcr.microsoft.com/mssql/server:2019-latest
-  #   container_name: MSSQL-Server
-  #   restart: on-failure
-  #   environment: 
-  #     - ACCEPT_EULA=Y
-  #     - SA_PASSWORD=P@ssword1
-  #     - MSSQL_PID=Express       
-  #   ports: 
-  #     - 1433:1433  
+  mssql-server:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: mssql-server
+    restart: on-failure
+    environment: 
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=adminPassword
+      - MSSQL_PID=Express       
+    ports: 
+      - 1433:1433  
+    volumes:
+      - mssql-data:/var/opt/mssql
 
   # mysql-server:
   #   image: library/mysql:8.0.23
@@ -45,43 +47,46 @@ services:
   #     - ./_MySQL_Init_Script:/docker-entrypoint-initdb.d
 
   postgres-server:
-    image: postgres:14.6
-    container_name: Postgres-Server
+    image: postgres:14.6-alpine
+    container_name: postgres-server
     restart: always
     environment: 
       - POSTGRES_USER=appuser
-      - POSTGRES_PASSWORD=Pa$$word1
+      - POSTGRES_PASSWORD=adminPassword
+      - POSTGRES_DB=postgres
     ports: 
-      - 5433:5432    
+      - 5432:5432    
     volumes:
       - pgdata:/var/lib/postgresql/data
 
   mongodb-server:
     image: mongo:6.0.3
-    container_name: Mongo-Server
+    container_name: mongo-server
     restart: always
     environment: 
       - MONGO_INITDB_ROOT_USERNAME=appuser
-      - MONGO_INITDB_ROOT_PASSWORD=Password1
+      - MONGO_INITDB_ROOT_PASSWORD=adminPassword
     ports: 
       - 27017:27017    
     volumes:
       - mongo-data:/data/db
 
   # mongo-express:
-  #   image: mongo-Express
-  #   container_name: Mongo-Express
-  #   restart: on-failure
+  #   image: mongo-express
+  #   container_name: mongo-express-app
+  #   restart: always
   #   ports:
-  #     - 8080:8081
+  #     - 8081:8081
   #   environment:
   #     - ME_CONFIG_MONGODB_ADMINUSERNAME=appuser
-  #     - ME_CONFIG_MONGODB_ADMINPASSWORD=P@ssword1
+  #     - ME_CONFIG_MONGODB_ADMINPASSWORD=adminPassword
+  #     # - ME_CONFIG_MONGODB_URL=mongodb://appuser:adminPassword@mongodb-server:27017/
   #     - ME_CONFIG_MONGODB_SERVER=mongodb-server
 
+
   redis-server:
-    image: redis:7.0.5
-    container_name: Redis-Server
+    image: redis:7.0.7
+    container_name: redis-server
     restart: always
     ports: 
       - 6379:6379    
@@ -105,6 +110,7 @@ services:
   #     - rabbitmqnetwork
 
 volumes:
+  mssql-data:
   pgdata:
   mongo-data:
   redis-data:
