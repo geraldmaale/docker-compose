@@ -35,7 +35,6 @@ exporters:
       insecure: true
 
   logging:
-    loglevel: debug
 
   # Export to a file
   file:

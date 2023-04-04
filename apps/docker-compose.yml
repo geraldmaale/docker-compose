@@ -24,17 +24,28 @@ services:
   #     - "5050:80"
   #   volumes:
   #     - pgadmin_data:/root/.pgadmin
-
-  portainer:
-    image: portainer/portainer-ce:latest
-    container_name: portainer
-    restart: always
+ 
+  rabbitmq:
+    image: rabbitmq:3.11.11-alpine
     ports:
-      - "9000:9000"
-      - "9443:9443"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - portainer_data:/data
+      - "5672:5672"
+      - "15672:15672"
+    hostname: rabbitmq-server
+    restart: always
+    environment:
+      - RABBITMQ_DEFAULT_USER=appuser
+      - RABBITMQ_DEFAULT_PASS=adminPassword
+
+  # portainer:
+  #   image: portainer/portainer-ce:latest
+  #   container_name: portainer
+  #   restart: always
+  #   ports:
+  #     - "9000:9000"
+  #     - "9443:9443"
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #     - portainer_data:/data
 
 volumes:
   # pgadmin_data:

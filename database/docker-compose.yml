@@ -16,20 +16,20 @@ services:
   #     - 3306:3306
   #   volumes:
   #   - mariadb:/var/lib/mysql
-
-  mssql-server:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: mssql-server
-    restart: on-failure
-    environment: 
-      - ACCEPT_EULA=Y
-      - MSSQL_SA_PASSWORD=adminPassword
-      - MSSQL_PID=Express       
-    ports: 
-      - 1433:1433  
-    volumes:
-      - mssql-data:/var/opt/mssql
-
+#
+#  mssql-server:
+#    image: mcr.microsoft.com/mssql/server:2022-latest
+#    container_name: mssql-server
+#    restart: on-failure
+#    environment: 
+#      - ACCEPT_EULA=Y
+#      - MSSQL_SA_PASSWORD=adminPassword
+#      - MSSQL_PID=Express       
+#    ports: 
+#      - 1433:1433  
+#    volumes:
+#      - mssql-data:/var/opt/mssql
+#
   # mysql-server:
   #   image: library/mysql:8.0.23
   #   container_name: MySQL-Server
@@ -47,7 +47,7 @@ services:
   #     - ./_MySQL_Init_Script:/docker-entrypoint-initdb.d
 
   postgres-server:
-    image: postgres:14.6-alpine
+    image: postgres
     container_name: postgres-server
     restart: always
     environment: 
@@ -60,16 +60,16 @@ services:
       - pgdata:/var/lib/postgresql/data
 
   mongodb-server:
-    image: mongo:6.0.3
-    container_name: mongo-server
-    restart: always
-    environment: 
-      - MONGO_INITDB_ROOT_USERNAME=appuser
-      - MONGO_INITDB_ROOT_PASSWORD=adminPassword
-    ports: 
-      - 27017:27017    
-    volumes:
-      - mongo-data:/data/db
+   image: mongo:6.0.3
+   container_name: mongo-server
+   restart: always
+   environment: 
+     - MONGO_INITDB_ROOT_USERNAME=appuser
+     - MONGO_INITDB_ROOT_PASSWORD=adminPassword
+   ports: 
+     - 27017:27017    
+   volumes:
+     - mongo-data:/data/db
 
   # mongo-express:
   #   image: mongo-express
@@ -82,10 +82,9 @@ services:
   #     - ME_CONFIG_MONGODB_ADMINPASSWORD=adminPassword
   #     # - ME_CONFIG_MONGODB_URL=mongodb://appuser:adminPassword@mongodb-server:27017/
   #     - ME_CONFIG_MONGODB_SERVER=mongodb-server
-
-
+  
   redis-server:
-    image: redis:7.0.7
+    image: redis
     container_name: redis-server
     restart: always
     ports: 
@@ -93,24 +92,8 @@ services:
     volumes:
       - redis-data:/data
 
-  # rabbitmq-server:
-  #   image: masstransit/rabbitmq # rabbitmq:3.9-management
-  #   container_name: rabbitmq-server
-  #   hostname: rabbitmq-server
-  #   restart: always
-  #   # environment:
-  #   #   - RABBITMQ_DEFAULT_USER=appuser
-  #   #   - RABBITMQ_DEFAULT_PASS=Pa$$word1
-  #   ports:
-  #     - "5672:5672"
-  #     - "15672:15672"
-  #   volumes:
-  #     - rabbitmq-data:/var/lib/rabbitmq
-  #   networks:
-  #     - rabbitmqnetwork
-
 volumes:
-  mssql-data:
+#  mssql-data:
   pgdata:
   mongo-data:
   redis-data:
