@@ -1,0 +1,22 @@
+version: "3.6"
+
+networks:
+  messaging:
+    driver: bridge
+
+services:
+  rabbitmq:
+    image: masstransit/rabbitmq:latest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    hostname: rabbitmq-server
+    restart: always
+    environment:
+      - RABBITMQ_DEFAULT_USER=appuser
+      - RABBITMQ_DEFAULT_PASS=adminPassword
+    networks:
+      - messaging
+
+      
+  

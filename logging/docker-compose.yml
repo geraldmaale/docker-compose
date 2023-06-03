@@ -86,8 +86,8 @@ services:
 
 volumes:
   seq_data:
-  data01:
-    driver: local
+  # data01:
+  #   driver: local
   # data01:
   #   driver: local
   # data02:

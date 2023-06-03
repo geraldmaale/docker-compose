@@ -1,10 +1,18 @@
 ---
-version: "3"
+version: '3.9'
+x-default-logging: &logging
+  driver: "json-file"
+  options:
+    max-size: "5m"
+    max-file: "2"
 
 networks:
-  loki:
+  default:
+    name: grafana-opentel
+    driver: bridge
 
 services:
+
   read:
     image: grafana/loki:2.7.3
     container_name: loki-read
@@ -16,7 +24,7 @@ services:
       - 9095
     volumes:
       - ./loki-config.yaml:/etc/loki/config.yaml
-      # - loki-data:/etc/loki/config.yaml
+      # - grafana-opentel-data:/etc/loki/config.yaml
     depends_on:
       - minio
     healthcheck:
@@ -24,10 +32,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    networks: &loki-dns
-      loki:
-        aliases:
-          - loki
+    # networks:
+    #   - grafana-opentel
 
   write:
     image: grafana/loki:2.7.3
@@ -40,7 +46,6 @@ services:
       - 9095
     volumes:
       - ./loki-config.yaml:/etc/loki/config.yaml
-      # - loki-data:/etc/loki/config.yaml
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1" ]
       interval: 10s
@@ -48,22 +53,21 @@ services:
       retries: 5
     depends_on:
       - minio
-    networks:
-      <<: *loki-dns
+    # networks:
+    #   - grafana-opentel
 
   promtail:
     image: grafana/promtail:2.7.3
     container_name: promtail
     volumes:
       - ./promtail-local-config.yaml:/etc/promtail/config.yaml:ro
-      # - promtail-data:/etc/promtail/config.yaml:ro
       - /var/run/docker.sock:/var/run/docker.sock
     command: -config.file=/etc/promtail/config.yaml
     restart: always
     depends_on:
       - gateway
-    networks:
-      - loki
+    # networks:
+    #   - grafana-opentel
 
   minio:
     image: minio/minio
@@ -90,11 +94,11 @@ services:
       interval: 15s
       timeout: 20s
       retries: 5
-    networks:
-      - loki
+    # networks:
+    #   - grafana-opentel
 
   grafana:
-    image: grafana/grafana-enterprise:9.3.6
+    image: grafana/grafana-enterprise:9.4.7
     container_name: grafana
     restart: always
     environment:
@@ -129,11 +133,12 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - loki
+    # networks:
+    #   - grafana-opentel
     volumes:
-      # - ./.data/grafana:/var/lib/grafana
+      # - ./grafana:/var/lib/grafana
       - grafana-data:/var/lib/grafana
+    logging: *logging
 
   gateway:
     image: nginx:latest
@@ -203,38 +208,53 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - loki
+    # networks:
+    #   - grafana-opentel
 
   flog:
     image: mingrammer/flog
     container_name: flog
     restart: always
     command: -f json -d 1s -l
-    networks:
-      - loki
+    # networks:
+    #   - grafana-opentel
 
   jaeger:
-    image: jaegertracing/all-in-one:1.42
+    image: jaegertracing/all-in-one
     container_name: jaeger
     restart: always
+    command:
+      - "--memory.max-traces"
+      - "10000"
+      - "--query.base-path"
+      - "/jaeger/ui"
+      - "--prometheus.server-url"
+      - "http://prometheus:9090"
     environment:
       - COLLECTOR_ZIPKIN_HOST_PORT=:9411
       - COLLECTOR_OTLP_ENABLED=true
+      - METRICS_STORAGE_TYPE=prometheus
+    logging: *logging
+    deploy:
+      resources:
+        limits:
+          memory: 300M
     ports:
+      - "4317"          # OTLP over gRPC receiver
+      - "4318:4318"     # OTLP over HTTP receiver
+      - "9464"          # Prometheus exporter
+      - "8888"          # metrics endpoint
       - "6831:6831/udp"
       - "6832:6832/udp"
       - "5778:5778"
       - "16686:16686"
       - "16685:16685"
-      - "4317:4317"
-      - "4318:4318"
       - "14250:14250"
       - "14268:14268"
       - "14269:14269"
       - "9411:9411"
-    networks:
-      - loki
+    # networks:
+    #   - grafana-opentel
 
   # zipkin:
   #   image: openzipkin/zipkin
@@ -243,31 +263,46 @@ services:
   #   ports:
   #     - "9411:9411"
   #   networks:
-  #     - loki
+  #     - grafana-opentel
 
   prometheus:
-    image: prom/prometheus
+    image: quay.io/prometheus/prometheus
+    # image: prom/prometheus
     container_name: prometheus
     restart: always
+    command:
+      - --web.console.templates=/etc/prometheus/consoles
+      - --web.console.libraries=/etc/prometheus/console_libraries
+      - --storage.tsdb.retention.time=1h
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+      - --web.route-prefix=/
+      - --enable-feature=exemplar-storage
     ports:
       - "9090:9090"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
-      # - ./.data/prometheus:/prometheus
-      - prometheus-data:/prometheus
-    networks:
-      - loki
+    logging: *logging
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+    # networks:
+    #   - grafana-opentel
 
-  otel:
-    image: otel/opentelemetry-collector-contrib-dev:latest
-    container_name: otel
+  otelcol:
+    image: otel/opentelemetry-collector-contrib
+    container_name: otel-col
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 125M
     command: ["--config=/etc/otel-collector-config.yaml"]
+    logging: *logging
     volumes:
       - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
-      # - ./output:/etc/output:rw # Store the logs
-      - ./logs:/etc/output:rw
-      # - ./logs:/etc/output/logs.json
     ports:
       - "1888:1888"   # pprof extension
       - "8888:8888"   # Prometheus metrics exposed by the collector
@@ -278,14 +313,9 @@ services:
       - "55679:55679" # zpages extension
     depends_on:
       - jaeger
-    networks:
-      - loki
+    # networks:
+    #   - grafana-opentel
 
 volumes:
-  grafana-data:
-  prometheus-data:
-  otel-data:
   minio-data:
-  promtail-data:
-
-# docker run -d --name jaeger -e COLLECTOR_ZIPKIN_HOST_PORT=:9411 -e COLLECTOR_OTLP_ENABLED=true -p 6831:6831/udp -p 6832:6832/udp -p 5778:5778 -p 16686:16686 -p 4317:4317 -p 4318:4318 -p 14250:14250 -p 14268:14268 -p 14269:14269 -p 9411:9411 jaegertracing/all-in-one:1.42
+  grafana-data:
