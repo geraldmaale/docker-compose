@@ -15,10 +15,10 @@ receivers:
       thrift_http:
  
 exporters:  
-  otlp:
-    endpoint: "jaeger:4317"
-    tls:
-      insecure: true
+  # otlp:
+  #   endpoint: "jaeger:4317"
+  #   tls:
+  #     insecure: true
       
   jaeger:
     endpoint: "jaeger:14250"
@@ -26,7 +26,7 @@ exporters:
       insecure: true
 
   prometheus:
-    endpoint: "otelcol:9464"
+    endpoint: "otelcol:8889"
     resource_to_telemetry_conversion:
       enabled: true
     enable_open_metrics: true
@@ -50,18 +50,15 @@ extensions:
   zpages:
     endpoint: :55679
 
-connectors:
-  spanmetrics:
-
 service:
   extensions: [pprof, zpages, health_check]
   pipelines:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [otlp, logging, spanmetrics, jaeger]
+      exporters: [logging, jaeger]
     metrics:
-      receivers: [otlp, spanmetrics]
+      receivers: [otlp]
       processors: [filter, batch]
       exporters: [prometheus, logging]
     logs:
