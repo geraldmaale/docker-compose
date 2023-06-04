@@ -16,19 +16,30 @@ services:
   loki:
     image: grafana/loki:2.8.2
     container_name: loki
+    restart: always
     ports:
       - "3100:3100"
     command: -config.file=/etc/loki/local-config.yaml
   
   promtail:
     image: grafana/promtail:2.8.2
+    restart: always
     container_name: promtail
     volumes:
+      - ./promtail-local-config.yaml:/etc/promtail/config.yaml:ro
+      - /var/run/docker.sock:/var/run/docker.sock
       - /var/log:/var/log
     command: -config.file=/etc/promtail/config.yml
+
+  flog:
+    image: mingrammer/flog
+    container_name: flog
+    command: -f json -d 1s -l
     
   grafana:
-    image: grafana/grafana-enterprise:9.4.7
+    image: grafana/grafana:9.5.2
+    container_name: grafana
+    restart: always
     environment:
       - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
       - GF_AUTH_ANONYMOUS_ENABLED=true
@@ -50,7 +61,7 @@ services:
           basicAuth: false
           isDefault: true
           version: 1
-          editable: false        
+          editable: false      
         EOF
         /run.sh
     ports:
@@ -62,6 +73,8 @@ services:
       retries: 5
     volumes:
       - grafana-data:/var/lib/grafana
+    depends_on:
+      - loki
 
   jaeger:
     image: jaegertracing/all-in-one
@@ -127,6 +140,7 @@ services:
       # - "4317:4317"   # OTLP gRPC receiver
       # - "4318:4318"   # OTLP http receiver
       - "55679:55679" # zpages extension
+      - "3500:3500" # loki receiver HTTP
     depends_on:
       - jaeger
     deploy:
