@@ -4,3 +4,4 @@
 127.0.0.1 pgadmin.ideaslab.com
 127.0.0.1 portainer.ideaslab.com
 127.0.0.1 traefik.ideaslab.com
+127.0.0.1 sonar.ideaslab.com

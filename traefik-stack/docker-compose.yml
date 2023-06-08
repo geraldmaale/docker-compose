@@ -144,9 +144,9 @@ services:
       - TZ=Asia/Shanghai
     volumes:
       - ./heimdall/config:/config
-    # ports:
-    #   - 7080:80
-    #   - 7443:443
+    ports:
+      - 7080:80
+      - 7443:443
     networks:
       - proxy
     labels:
@@ -163,6 +163,34 @@ services:
       - "traefik.http.services.heimdall.loadbalancer.server.port=80"
       - "traefik.docker.network=proxy"
 
+  sonarqube:
+    image: sonarqube:latest
+    container_name: sonarqube
+    restart: unless-stopped
+    environment:
+      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_data:/opt/sonarqube/logs
+      - sonarqube_data:/opt/sonarqube/extensions
+    ports:
+      - 9900:9000
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.sonar.entrypoints=https"
+      - "traefik.http.routers.sonar.rule=Host(`sonar.ideaslab.com`)"
+      - "traefik.http.middlewares.sonar-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.sonar.middlewares=sonar-https-redirect"
+      - "traefik.http.routers.sonar-secure.entrypoints=https"
+      - "traefik.http.routers.sonar-secure.rule=Host(`sonar.ideaslab.com`)"
+      - "traefik.http.routers.sonar-secure.tls=true"
+      - "traefik.http.routers.sonar-secure.tls.certresolver=staging"
+      - "traefik.http.routers.sonar-secure.service=sonar"
+      - "traefik.http.services.sonar.loadbalancer.server.port=9000"
+      - "traefik.docker.network=proxy"
+
 networks:
   proxy:
 
@@ -171,3 +199,4 @@ volumes:
   pgadmin_data:
   uptime_kuma_data:
   seq_data:
+  sonarqube_data:
