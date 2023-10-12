@@ -1,0 +1,28 @@
+﻿traces:
+  configs:
+    - name: default
+      remote_write:
+        - endpoint: tempo-us-central1.grafana.net:443
+          basic_auth:
+            username: 300652
+            password: eyJrIjoiNzEwYWNmNmRjYmI0Mzk2Mzg1NTY4MjNjMDA5MzA2ZWQ0NjgyNzU2NiIsIm4iOiJjaHVyY2hwb3J0YWwiLCJpZCI6NzI2NjAzfQ==
+          insecure: false
+      receivers:
+        jaeger:
+          protocols:
+            thrift_http:
+              
+metrics:
+  global:
+    scrape_interval: 1m
+  configs:
+    - name: agent
+      scrape_configs:
+        - job_name: agent
+          static_configs:
+            - targets: ['127.0.0.1:12345']
+      remote_write:
+        - url: https://prometheus-prod-10-prod-us-central-0.grafana.net/api/prom/push
+          basic_auth:
+            username: 610339
+            password: eyJrIjoiNzEwYWNmNmRjYmI0Mzk2Mzg1NTY4MjNjMDA5MzA2ZWQ0NjgyNzU2NiIsIm4iOiJjaHVyY2hwb3J0YWwiLCJpZCI6NzI2NjAzfQ==

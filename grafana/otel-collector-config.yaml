@@ -2,18 +2,11 @@ receivers:
   otlp:
     protocols:
       grpc:
-      http:
-        cors:
-            allowed_origins:
-              - "http://*"
-              - "https://*"
+      
   loki:
     protocols:
       http:
     use_incoming_timestamp: true
-
-  filelog:
-    include: [/var/log/*.log]
 
   jaeger:
     protocols:
@@ -23,27 +16,29 @@ receivers:
       thrift_http:
  
 exporters:  
-  # otlp:
-  #   endpoint: "jaeger:4317"
-  #   tls:
-  #     insecure: true
-  
+  otlp:
+    endpoint: "tempo:4317"
+    tls:
+      insecure: true
+       
   loki:
     endpoint: http://loki:3100/loki/api/v1/push
 
-  jaeger:
-    endpoint: "jaeger:14250"
+  zipkin:
+    endpoint: "http://zipkin:9411/api/v2/spans"
     tls:
       insecure: true
 
   prometheus:
-    endpoint: "otelcol:8889"
+    endpoint: "otelcol:9201"
     resource_to_telemetry_conversion:
       enabled: true
     enable_open_metrics: true
 
   logging:
     verbosity: detailed
+    sampling_initial: 1
+    sampling_thereafter: 1
 
 processors:
   batch:
@@ -61,9 +56,6 @@ processors:
       - action: insert
         key: loki.format
         value: raw
-      - action: insert
-        key: loki.attribute.labels
-        value: log.file.name
 
 extensions:
   health_check:
@@ -74,16 +66,21 @@ extensions:
 
 service:
   extensions: [pprof, zpages, health_check]
+  telemetry:
+    logs:
+      level: info
+    metrics:
+      level: none
   pipelines:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [logging, jaeger]
+      exporters: [logging,zipkin,otlp]
     metrics:
       receivers: [otlp]
-      processors: [filter, batch]
-      exporters: [prometheus, logging]
+      processors: [filter,batch]
+      exporters: [prometheus,logging]
     logs:
-      receivers: [otlp, loki, filelog]
-      processors: [batch, attributes]
-      exporters: [logging, loki]
+      receivers: [otlp,loki]
+      processors: [batch,attributes]
+      exporters: [logging,loki]

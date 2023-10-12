@@ -5,3 +5,7 @@ observability/output/
 signoz/docker/clickhouse-setup/data/
 **/__pycache__/
 signoz/docker-swarm/clickhouse-setup/**/
+apps/**/
+otel/output/
+traefik/.letsencrypt/
+traefik/apps/heimdall/

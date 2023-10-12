@@ -1,0 +1,96 @@
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
+
+api:
+  dashboard: true
+  insecure: true
+
+entryPoints:
+  web:
+    address: :80
+
+  websecure:
+    address: :443
+    http:
+      tls:
+        certResolver: staging
+        # domains:
+        #   - main: ideaslab.com
+        #     sans:
+        #       - "*.ideaslab.com"
+    http2:
+      maxConcurrentStreams: 250
+
+  metrics:
+    address: :8082
+    
+
+providers:
+  docker:
+    exposedByDefault: false
+    useBindPortIP: true
+  file:
+    # directory: "/config.yml"
+    watch: true
+    filename: /config.yml
+
+certificatesResolvers:
+  staging:
+    acme:
+      email: support@greatideasgh.org
+      storage: acme.json
+      # caServer: "https://acme-staging-v02.api.letsencrypt.org/directory"
+      # httpChallenge:
+      #   entryPoint: web
+      tlschallenge: true
+
+  # production:
+  #   acme:
+  #     email: gematmail@gmail.com
+  #     storage: acme.json
+  #     caServer: "https://acme-v02.api.letsencrypt.org/directory"
+  #     httpChallenge:
+  #       entryPoint: http
+
+log:
+  level: DEBUG
+  # filePath: "/traefik.log"
+
+accessLog:
+  filePath: "/access.log"
+  bufferingSize: 100
+  filters:
+    statusCodes:
+      - "400-499"
+      - "500-599"
+
+metrics:
+  # openTelemetry:
+  #   insecure: true
+  #   pushInterval: 10s
+  #   path: /v1/metrics
+  #   address: localhost:4318
+  #   addEntryPointsLabels: true
+  #   addServicesLabels: true
+  #   addRoutersLabels: true
+  #   explicitBoundaries:
+  #     - 0.1
+  #     - 0.3
+  #     - 1.2
+  #     - 5.0
+
+  prometheus: 
+    entryPoint: metrics
+    addEntryPointsLabels: true
+    addServicesLabels: true
+    addRoutersLabels: true    
+    buckets:
+      - 0.1
+      - 0.3
+      - 1.2
+      - 5.0
+
+tracing:
+  jaeger: {}
+  # openTelemetry: {}

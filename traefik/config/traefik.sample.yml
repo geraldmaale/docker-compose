@@ -1,0 +1,44 @@
+################################################################
+#
+# Configuration sample for Traefik v2.
+#
+# For Traefik v2: https://github.com/traefik/traefik/blob/v2.10/traefik.sample.yml
+api:
+  dashboard: true
+  debug: true
+
+entryPoints:
+  http:
+    address: ":80"
+    # (Optional) Redirect to HTTPS
+    http:
+      redirections:
+        entryPoint:
+          to: https
+          scheme: https
+          permanent: true
+  https:
+    address: ":443"
+
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+  file:
+    filename: /config.yml
+
+certificatesResolvers:
+  staging:
+    acme:
+      email: gematmail@gmail.com
+      storage: acme.json
+      caServer: "https://acme-staging-v02.api.letsencrypt.org/directory"
+      httpChallenge:
+        entryPoint: http
+  production:
+    acme:
+      email: gematmail@gmail.com
+      storage: acme.json
+      caServer: "https://acme-v02.api.letsencrypt.org/directory"
+      httpChallenge:
+        entryPoint: http

@@ -1,0 +1,46 @@
+---
+http:
+  middlewares:
+    simpleAuth:
+      basicAuth:
+        users:
+          - admin:$apr1$17vfM4o3$GIJH/AvXKHYW6lS08p2uT1
+    
+    https-redirect:
+      redirectScheme:
+        scheme: https
+        permanent: true
+        port: 443
+  
+
+  routers:
+    traefik:
+      tls:
+        certResolver: staging
+      rule: "Host(`traefik.ideaslab.com`)"
+      entryPoints:
+        - websecure
+        - web
+        - metrics
+      service: api@internal
+      middlewares:
+        - simpleAuth
+        - https-redirect
+
+    portainer:
+      tls:
+        certResolver: staging
+      rule: "Host(`portainer.ideaslab.com`)"
+      entryPoints:
+        - web
+        - websecure
+      middlewares:
+        - https-redirect
+      service: portainer-service
+
+  services:
+    portainer-service:
+      loadBalancer:
+        servers:
+          - url: "http://portainer:9000"
+           

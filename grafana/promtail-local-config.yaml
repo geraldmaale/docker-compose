@@ -8,6 +8,7 @@ positions:
 
 clients:
   - url: http://otelcol:3500/loki/api/v1/push
+#  - url: http://loki:3100/loki/api/v1/push
 
 scrape_configs:
   - job_name: flog_scrape 
@@ -18,3 +19,10 @@ scrape_configs:
       - source_labels: ['__meta_docker_container_name']
         regex: '/(.*)'
         target_label: 'container'
+  - job_name: system
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: varlogs
+          __path__: /var/log/*.log

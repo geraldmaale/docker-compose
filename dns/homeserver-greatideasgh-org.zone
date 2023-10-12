@@ -1,0 +1,22 @@
+; base zone file for homeserver.greatideasgh.org
+$TTL 2d; default ttl for zone
+
+$ORIGIN homeserver.greatideasgh.org. ; base domain name for zone
+
+@   IN  SOA ns.homeserver.greatideasgh.org. support.greatideasgh.org. (
+            2023091900 ; serial number
+            12h        ; refresh
+            15m        ; update retry
+            3w         ; expiry
+            2h         ; minimum ttl
+            )
+
+    IN  NS ns.homeserver.greatideasgh.org. 
+
+ns  IN  A   192.168.1.100
+
+; -- demo servers
+traefik     IN      A       192.168.1.100
+portainer   IN      A       192.168.1.100
+srv-demo    IN      A       192.168.1.100
+*.srv-demo  IN      A       192.168.1.100
