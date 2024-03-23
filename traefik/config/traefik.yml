@@ -2,7 +2,11 @@
 #
 # Configuration sample for Traefik v2.
 #
-# For Traefik v2: https://github.com/traefik/traefik/blob/v2.10/traefik.sample.yml
+# For Traefik v2: https://github.com/traefik/traefik/blob/v2.11/traefik.sample.yml
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
+
 api:
   dashboard: true
   insecure: true
@@ -19,26 +23,63 @@ entryPoints:
           permanent: true
   https:
     address: ":443"
-
+    http:
+      tls:
+        certResolver: staging
+    http2:
+      maxConcurrentStreams: 250
+  metrics:
+    address: :8082
+  
 providers:
   docker:
-    endpoint: "unix:///var/run/docker.sock"
+    # endpoint: "unix:///var/run/docker.sock"
+    # exposedByDefault: false
     exposedByDefault: false
+    useBindPortIP: true
   file:
-    filename: /config.yml
+    watch: true
+    filename: config/config.yml
 
 certificatesResolvers:
   staging:
     acme:
-      email: gematmail@gmail.com
+      email: geraldmaale@gmail.com
       storage: acme.json
-      caServer: "https://acme-staging-v02.api.letsencrypt.org/directory"
+      # caServer: "https://acme-staging-v02.api.letsencrypt.org/directory"
+      # httpChallenge:
+      #   entryPoint: http
+      tlschallenge: true
+  production:
+    acme:
+      email: geraldmaale@gmail.com
+      storage: acme.json
+      caServer: "https://acme-v02.api.letsencrypt.org/directory"
       httpChallenge:
         entryPoint: http
-  # production:
-  #   acme:
-  #     email: gematmail@gmail.com
-  #     storage: acme.json
-  #     caServer: "https://acme-v02.api.letsencrypt.org/directory"
-  #     httpChallenge:
-  #       entryPoint: http
+
+log:
+  level: DEBUG
+  filePath: "/traefik.log"
+
+accessLog:
+  filePath: "/access.log"
+  bufferingSize: 100
+  filters:
+    statusCodes:
+      - "400-499"
+      - "500-599"
+
+metrics:
+  prometheus:
+    entryPoint: metrics
+    addEntryPointsLabels: true
+    addServicesLabels: true
+    buckets:
+      - 0.1
+      - 0.3
+      - 1.2
+      - 5.0
+
+tracing:
+  jaeger: {}

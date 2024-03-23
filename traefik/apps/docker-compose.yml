@@ -2,7 +2,7 @@ version: "3.3"
 
 services:
   portainer:
-    image: portainer/portainer-ce
+    image: portainer/portainer-ce:2.20.0
     container_name: portainer
     restart: always
     security_opt:
@@ -84,8 +84,8 @@ services:
       - seq_data:/data
     networks:
       - proxy
-    ports:
-      - 5555:80
+    # ports:
+    #   - 5555:80
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.seq.entrypoints=http"
@@ -110,9 +110,9 @@ services:
       - TZ=Asia/Shanghai
     volumes:
       - ./heimdall/config:/config
-    ports:
-      - 7080:80
-      - 7443:443
+    # ports:
+    #   - 7080:80
+    #   - 7443:443
     networks:
       - proxy
     labels:
@@ -130,19 +130,23 @@ services:
       - "traefik.docker.network=proxy"
 
   sonarqube:
-    image: sonarqube:latest
+    image: sonarqube:10.4.1-community
     container_name: sonarqube
     restart: always
     environment:
       - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+      - SONAR_JDBC_URL=jdbc:postgresql://postgres-server:5432/sonar
+      - SONAR_JDBC_USERNAME=appuser
+      - SONAR_JDBC_PASSWORD=adminPassword
     volumes:
       - sonarqube_data:/opt/sonarqube/data
       - sonarqube_data:/opt/sonarqube/logs
       - sonarqube_data:/opt/sonarqube/extensions
-    ports:
-      - 9900:9000
+    # ports:
+    #   - 9900:9000
     networks:
       - proxy
+      - database_net
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.sonar.entrypoints=http"
@@ -157,8 +161,50 @@ services:
       - "traefik.http.services.sonar.loadbalancer.server.port=9000"
       - "traefik.docker.network=proxy"
 
+  rabbitmq:
+    image: rabbitmq:3.12.6-management-alpine
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+    #   - "15672:15672"
+    #   - "15692:15692"
+    hostname: rabbitmq-server
+    restart: always
+    networks:
+      - proxy
+    environment:
+      - RABBITMQ_DEFAULT_USER=appuser
+      - RABBITMQ_DEFAULT_PASS=adminPassword
+    cap_add:
+      - ALL
+    ulimits:
+      nofile:
+        soft: 2000
+        hard: 2000
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.rabbitmq.entrypoints=http
+      - traefik.http.routers.rabbitmq.rule=Host(`rabbitmq.ideaslab.com`)
+      - traefik.http.middlewares.rabbitmq-https-redirect.redirectscheme.scheme=https
+      - traefik.http.routers.rabbitmq.middlewares=rabbitmq-https-redirect
+      - traefik.http.routers.rabbitmq-secure.entrypoints=https
+      - traefik.http.routers.rabbitmq-secure.rule=Host(`rabbitmq.ideaslab.com`)
+      - traefik.http.routers.rabbitmq-secure.tls=true
+      - traefik.http.routers.rabbitmq-secure.tls.certresolver=staging
+      - traefik.http.routers.rabbitmq-secure.service=rabbitmq
+      - traefik.http.services.rabbitmq.loadbalancer.server.port=15672
+      - traefik.docker.network=proxy
+
 networks:
   proxy:
+    external: true
+  database_net:
     external: true
   internal:
     external: false
@@ -169,3 +215,4 @@ volumes:
   uptime_kuma_data:
   seq_data:
   sonarqube_data:
+  rabbitmq_data:

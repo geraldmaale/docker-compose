@@ -30,14 +30,14 @@ providers:
 certificatesResolvers:
   staging:
     acme:
-      email: gematmail@gmail.com
+      email: geraldmaale@gmail.com
       storage: acme.json
       caServer: "https://acme-staging-v02.api.letsencrypt.org/directory"
       httpChallenge:
         entryPoint: http
   production:
     acme:
-      email: gematmail@gmail.com
+      email: geraldmaale@gmail.com
       storage: acme.json
       caServer: "https://acme-v02.api.letsencrypt.org/directory"
       httpChallenge:

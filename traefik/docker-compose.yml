@@ -2,7 +2,7 @@ version: "3.3"
 
 services:
   traefik:
-    image: "traefik:v2.10"
+    image: "traefik:v2.11"
     container_name: "traefik"
     restart: always
     command:
@@ -17,9 +17,7 @@ services:
       - "443:443"
       - "18080:8080"
     volumes:
-      - /etc/localtime:/etc/localtime:ro
       - ".letsencrypt:/letsencrypt"
-      # - "./letsencrypt/acme.json:/acme.json:ro"
       - "./config/traefik.yml:/traefik.yml:ro"
       - "./config/config.yml:/config.yml:ro"
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
@@ -27,7 +25,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik.entrypoints=http"
       - "traefik.http.routers.traefik.rule=Host(`traefik.ideaslab.com`)"
-      - "traefik.http.middlewares.traefik-auth.basicauth.users=gematmail@gmail.com:$$apr1$$tSgdFvEU$$wtMyhIhvKN3xYDocs8byV/"
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=geraldmaale@gmail.com:$$apr1$$tSgdFvEU$$wtMyhIhvKN3xYDocs8byV/"
       - "traefik.http.middlewares.traefik-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.routers.traefik.middlewares=traefik-https-redirect"
       - "traefik.http.routers.traefik-secure.middlewares=traefik-auth"
@@ -40,4 +38,5 @@ services:
 
 networks:
   proxy:
-    external: true
+    name: proxy
+    driver: bridge

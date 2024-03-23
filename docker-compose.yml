@@ -1,0 +1,18 @@
+version: '3'
+
+services:
+  evoting:
+    image: greatideasgh/evoting:954
+    container_name: gibs-app
+    restart: always
+    environment:
+      - DOTNET_ENVIRONMENT=Production
+    ports:
+      - "32000:8080"
+    volumes:
+      - evoting-data:/app/wwwroot/candidates
+      - ~/data/evoting/logos:/app/wwwroot/logos
+
+volumes:
+  evoting-data:
+   driver: local

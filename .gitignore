@@ -1,6 +1,5 @@
 dashboard/homer/
 dashboard/heimdall/
-traefik-stack/.letsencrypt/
 observability/output/
 signoz/docker/clickhouse-setup/data/
 **/__pycache__/
@@ -9,3 +8,4 @@ apps/**/
 otel/output/
 traefik/.letsencrypt/
 traefik/apps/heimdall/
+WriteToHosts

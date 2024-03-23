@@ -1,21 +1,21 @@
-version: "3.3"
+version: "3.6"
 
 services:
-  reverse-proxy-server:
-    image: jc21/nginx-proxy-manager:latest
-    container_name: Reverse-Proxy-Server
-    restart: always
-    ports:
-      - "80:80"
-      - "81:81"
-      - "443:443"
-    volumes:
-      - ./data:/data
-      - ./letsencrypt:/etc/letsencrypt
-    deploy:
-      resources:
-        limits:
-          memory: 200M
+  # reverse-proxy-server:
+  #   image: jc21/nginx-proxy-manager:latest
+  #   container_name: Reverse-Proxy-Server
+  #   restart: always
+  #   ports:
+  #     - "80:80"
+  #     - "81:81"
+  #     - "443:443"
+  #   volumes:
+  #     - ./data:/data
+  #     - ./letsencrypt:/etc/letsencrypt
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 200M
 
   rabbitmq:
     image: rabbitmq:3.12.6-management-alpine
@@ -27,7 +27,7 @@ services:
     hostname: rabbitmq-server
     restart: always
     networks:
-      - frontend
+      - traefik-proxy
     environment:
       - RABBITMQ_DEFAULT_USER=appuser
       - RABBITMQ_DEFAULT_PASS=adminPassword
@@ -47,7 +47,7 @@ services:
     #   - traefik.enable=true
 
   portainer:
-    image: portainer/portainer-ce:2.19.1
+    image: portainer/portainer-ce:2.20.0
     container_name: portainer
     restart: always
     security_opt:
@@ -56,7 +56,7 @@ services:
       - 9000:9000
       - 9443:9443
     networks:
-      - frontend
+      - traefik-proxy
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -76,7 +76,7 @@ services:
   #     - PGADMIN_DEFAULT_EMAIL=gematmail@gmail.com
   #     - PGADMIN_DEFAULT_PASSWORD=adminPassword
   #   networks:
-  #     - frontend
+  #     - traefik-proxy
   #   volumes:
   #     - pgadmin_data:/root/.pgadmin
   #   labels:
@@ -86,20 +86,20 @@ services:
   #       limits:
   #         memory: 200M
 
-  uptime-kuma:
-    image: louislam/uptime-kuma:latest
-    container_name: uptime-kuma
-    restart: always
-    networks:
-      - frontend
-    volumes:
-      - uptime_kuma_data:/app/data
-    deploy:
-      resources:
-        limits:
-          memory: 100M
-    # labels:
-    #   - "traefik.enable=true"
+  # uptime-kuma:
+  #   image: louislam/uptime-kuma:latest
+  #   container_name: uptime-kuma
+  #   restart: always
+  #   networks:
+  #     - traefik-proxy
+  #   volumes:
+  #     - uptime_kuma_data:/app/data
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 100M
+  # labels:
+  #   - "traefik.enable=true"
 
   seq:
     image: datalust/seq
@@ -110,7 +110,7 @@ services:
     volumes:
       - seq_data:/data
     networks:
-      - frontend
+      - traefik-proxy
     ports:
       - 5555:80
     deploy:
@@ -134,7 +134,7 @@ services:
   #     - 7080:80
   #     - 7443:443
   #   networks:
-  #     - frontend
+  #     - traefik-proxy
   #   labels:
   #     - "traefik.enable=true"
   #     - "traefik.http.routers.heimdall.tls=true"
@@ -148,15 +148,15 @@ services:
   #     - "traefik.http.routers.heimdall-secure.service=heimdall"
   #     - "traefik.http.middlewares.heimdall-https-redirect.redirectscheme.scheme=https"
   #     - "traefik.http.services.heimdall.loadbalancer.server.port=80"
-  #     - "traefik.docker.network=frontend"
+  #     - "traefik.docker.network=traefik-proxy"
 
   sonarqube:
-    image: sonarqube:10.2.1-community
+    image: sonarqube:10.4.1-community
     container_name: sonarqube
     restart: always
     environment:
       - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
-      - SONAR_JDBC_URL=jdbc:postgresql://postgres-server:5432/sonar
+      - SONAR_JDBC_URL=jdbc:postgresql://postgres-server:5433/sonar
       - SONAR_JDBC_USERNAME=appuser
       - SONAR_JDBC_PASSWORD=adminPassword
     volumes:
@@ -166,8 +166,8 @@ services:
     ports:
       - 9900:9000
     networks:
-      - frontend
       - database-net
+      - traefik-proxy
     deploy:
       resources:
         limits:
@@ -193,7 +193,7 @@ services:
   #     - 50001:8080
   #     - 50000:50000
   #   networks:
-  #     - frontend
+  #     - traefik-proxy
   # labels:
   #   - "traefik.enable=true"
   # deploy:
@@ -209,14 +209,14 @@ services:
   #     - 127.0.0.1:2376:2375
   #   command: tcp-listen:2375,fork,reuseaddr unix-connect:/var/run/docker.sock
   #   networks:
-  #     - frontend
+  #     - traefik-proxy
   #   volumes:
   #     - /var/run/docker.sock:/var/run/docker.sock
 
 volumes:
   portainer_data:
-  pgadmin_data:
-  uptime_kuma_data:
+  # pgadmin_data:
+  # uptime_kuma_data:
   seq_data:
   sonarqube_data:
   rabbitmq_data:
@@ -224,8 +224,9 @@ volumes:
   # jenkins-docker-certs:
 
 networks:
-  frontend:
-    external: true
   database-net:
     external:
       name: database_network
+  traefik-proxy:
+    external:
+      name: proxy

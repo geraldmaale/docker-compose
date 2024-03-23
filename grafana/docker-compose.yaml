@@ -10,7 +10,7 @@ networks:
   default:
     name: grafana-opentel
     driver: bridge
-  frontend:
+  proxy:
     external: true
 
 services:
@@ -29,8 +29,8 @@ services:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=adminPassword
       # - GF_INSTALL_PLUGINS=flant-statusmap-panel,grafana-piechart-panel
-    ports:
-      - "3000:3000"
+    # ports:
+    #   - "3000:3000"
     healthcheck:
       test:
         [
@@ -52,6 +52,21 @@ services:
       resources:
         limits:
           memory: 150M
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana.entrypoints=http"
+      - "traefik.http.routers.grafana.rule=Host(`grafana.ideaslab.com`)"
+      - "traefik.http.middlewares.grafana-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.grafana.middlewares=grafana-https-redirect"
+      - "traefik.http.routers.grafana-secure.entrypoints=https"
+      - "traefik.http.routers.grafana-secure.rule=Host(`grafana.ideaslab.com`)"
+      - "traefik.http.routers.grafana-secure.tls=true"
+      - "traefik.http.routers.grafana-secure.tls.certresolver=staging"
+      - "traefik.http.routers.grafana-secure.service=grafana"
+      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+      - "traefik.docker.network=proxy"
 
   #  grafana-agent:
   #    image: grafana/agent:latest
@@ -134,6 +149,8 @@ services:
         limits:
           memory: 350M
     logging: *logging
+    networks:
+      - proxy
 
   prometheus:
     image: quay.io/prometheus/prometheus:v2.47.0
@@ -158,6 +175,8 @@ services:
         limits:
           memory: 350M
     logging: *logging
+    networks:
+      - proxy
 
   node-exporter:
     image: prom/node-exporter:latest
