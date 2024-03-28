@@ -119,7 +119,7 @@ services:
       - "8889:8889" # Prometheus exporter metrics
       - "9464" # Prometheus exporter
       - "13133:13133" # health_check extension
-      - "4317:4317" # OTLP gRPC receiver
+      # - "4317:4317" # OTLP gRPC receiver
       - "4318:4318" # OTLP http receiver
       - "9201:9201" # Tempo receiver
       - "14268" # jaeger ingest
@@ -132,6 +132,33 @@ services:
         limits:
           memory: 125M
     logging: *logging
+
+  aspire:
+    image: mcr.microsoft.com/dotnet/nightly/aspire-dashboard:8.0.0-preview.4
+    container_name: aspire-dashboard
+    restart: always
+    ports:
+      - "4317:18889"
+    deploy:
+      resources:
+        limits:
+          memory: 350M
+    logging: *logging
+    networks:
+      - proxy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.aspire.entrypoints=http
+      - traefik.http.routers.aspire.rule=Host(`aspire.ideaslab.com`)
+      - traefik.http.middlewares.aspire-https-redirect.redirectscheme.scheme=https
+      - traefik.http.routers.aspire.middlewares=aspire-https-redirect
+      - traefik.http.routers.aspire-secure.entrypoints=https
+      - traefik.http.routers.aspire-secure.rule=Host(`aspire.ideaslab.com`)
+      - traefik.http.routers.aspire-secure.tls=true
+      - traefik.http.routers.aspire-secure.tls.certresolver=staging
+      - traefik.http.routers.aspire-secure.service=aspire
+      - traefik.http.services.aspire.loadbalancer.server.port=18888
+      - traefik.docker.network=proxy
 
 volumes:
   prometheus-data:

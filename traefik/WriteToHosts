@@ -8,4 +8,6 @@
 127.0.0.1   sonar.ideaslab.com
 127.0.0.1   uptime-kuma.ideaslab.com
 127.0.0.1   pgadmin.ideaslab.com
-127.0.0.1   jaeger.ideaslab.com
+127.0.0.1   rabbitmq.ideaslab.com
+127.0.0.1   zipkin.ideaslab.com
+127.0.0.1   aspire.ideaslab.com
