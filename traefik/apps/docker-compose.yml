@@ -84,8 +84,8 @@ services:
       - seq_data:/data
     networks:
       - proxy
-    # ports:
-    #   - 5555:80
+    ports:
+      - 5555:80
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.seq.entrypoints=http"
