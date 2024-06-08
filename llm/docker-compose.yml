@@ -38,10 +38,13 @@ services:
     restart: always
     ports:
       - "3000:8080"
+    volumes:
+      - open-webui:/app/backend/data
     environment:
       - OPENAI_API_KEY=<KEY HERE>
 
 volumes:
+  open-webui:
   vectoradmin-data:
   chroma-data:
 
