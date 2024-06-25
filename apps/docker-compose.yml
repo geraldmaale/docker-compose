@@ -102,7 +102,7 @@ services:
   #   - "traefik.enable=true"
 
   seq:
-    image: datalust/seq
+    image: datalust/seq:2024.3
     container_name: seq-server
     restart: always
     environment:

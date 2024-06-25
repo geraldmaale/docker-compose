@@ -9,3 +9,4 @@ otel/output/
 traefik/.letsencrypt/
 traefik/apps/heimdall/
 WriteToHosts
+.env
