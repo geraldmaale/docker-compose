@@ -134,11 +134,17 @@ services:
     logging: *logging
 
   aspire:
-    image: mcr.microsoft.com/dotnet/nightly/aspire-dashboard:8.0
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:8.1.0
     container_name: aspire-dashboard
     restart: always
     ports:
       - "4317:18889"
+    environment:
+      - DASHBOARD__TELEMETRYLIMITS__MAXLOGCOUNT=20000
+      - DASHBOARD__TELEMETRYLIMITS__MAXTRACECOUNT=20000
+      - DASHBOARD__TELEMETRYLIMITS__MAXMETRICSCOUNT=20000
+      - DASHBOARD__FRONTEND_AUTHMODE=BrowserToken # OpenIdConnect/Unsecured
+      - DASHBOARD__FRONTEND_BROWSERTOKEN=93326466479843b4a2ebd7170faecb92
     deploy:
       resources:
         limits:

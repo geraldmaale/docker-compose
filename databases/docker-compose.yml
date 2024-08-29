@@ -15,24 +15,24 @@ services:
   #   volumes:
   #   - mariadb:/var/lib/mysql
 
-  # mssql-server:
-  #   image: mcr.microsoft.com/mssql/server:2022-latest
-  #   container_name: mssql-server
-  #   restart: always
-  #   environment:
-  #     - ACCEPT_EULA=Y
-  #     - MSSQL_SA_PASSWORD=adminPassword@2022
-  #     - MSSQL_PID=Express
-  #   ports:
-  #     - 1433:1433
-  #   volumes:
-  #     - mssql-data:/var/opt/mssql
-  #   networks:
-  #     - database_net
-  #   deploy:
-  #     resources:
-  #       limits:
-  #         memory: 2G
+  mssql-server:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: mssql-server
+    restart: always
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=adminPassword2022
+      - MSSQL_PID=Express
+    ports:
+      - 1433:1433
+    volumes:
+      - mssql-data:/var/opt/mssql
+    networks:
+      - database_net
+    deploy:
+      resources:
+        limits:
+          memory: 2G
 
   postgres-server:
     image: postgres:15.3-alpine
@@ -74,7 +74,7 @@ services:
       - database_net
 
   redis-server:
-    image: redis
+    image: redis:7.4.0
     container_name: redis-server
     restart: always
     ports:
@@ -89,11 +89,26 @@ services:
     networks:
       - database_net
 
+  garnet:
+    image: "ghcr.io/microsoft/garnet"
+    ulimits:
+      memlock: -1
+    ports:
+      - "6380:6379"
+    # To avoid docker NAT, consider `host` mode.
+    # https://docs.docker.com/compose/compose-file/compose-file-v3/#network_mode
+    # network_mode: "host"
+    volumes:
+      - garnet-data:/data
+    networks:
+      - database_net
+
 volumes:
-  # mssql-data:
+  mssql-data:
   pgdata:
   mongo-data:
   redis-data:
+  garnet-data:
 
 networks:
   database_net:

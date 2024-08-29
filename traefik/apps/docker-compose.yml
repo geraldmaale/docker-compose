@@ -78,6 +78,8 @@ services:
     restart: always
     environment:
       - ACCEPT_EULA=Y
+      - SEQ_API_CANONICALURI=https://seq.ideaslab.com
+      - SEQ_FIRSTRUN_ADMINPASSWORDHASH="$PH"
     volumes:
       - seq_data:/data
     networks:
