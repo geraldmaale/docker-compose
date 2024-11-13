@@ -1,0 +1,57 @@
+version: "3.6"
+
+services:
+  reverse-proxy-server:
+    image: jc21/nginx-proxy-manager:2.11.3
+    container_name: Reverse-Proxy-Server
+    restart: always
+    ports:
+      - "80:80"
+      - "81:81"
+      - "443:443"
+    volumes:
+      - ./data:/data
+      - ./letsencrypt:/etc/letsencrypt
+    deploy:
+      resources:
+        limits:
+          memory: 200M
+
+  postgres-server:
+    image: postgres:16.4-alpine
+    container_name: postgres-server
+    restart: always
+    environment:
+      - POSTGRES_USER=appuser
+      - POSTGRES_PASSWORD=AdminPassword!!!
+      - POSTGRES_DB=postgres
+    ports:
+      - 5433:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  portainer:
+    image: portainer/portainer-ce:2.21.2-alpine
+    container_name: portainer
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - 9000:9000
+      - 9443:9443
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - portainer_data:/data
+    deploy:
+      resources:
+        limits:
+          memory: 150M
+
+volumes:
+  portainer_data:
+  postgres_data:

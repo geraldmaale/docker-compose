@@ -134,7 +134,7 @@ services:
     logging: *logging
 
   aspire:
-    image: mcr.microsoft.com/dotnet/aspire-dashboard:8.1.0
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:8.2.1
     container_name: aspire-dashboard
     restart: always
     ports:
