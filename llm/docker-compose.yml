@@ -1,34 +1,13 @@
 services:
-  # chromadb:
-  #   container_name: chromadb
-  #   image: chromadb/chroma
-  #   restart: always
-  #   ports:
-  #     - "8000:8000"
-  #   volumes:
-  #     - chroma-data:/chroma/chroma
-
-  # vector-admin:
-  #   container_name: vector-admin
-  #   image: mintplexlabs/vectoradmin
-  #   restart: always
-  #   ports:
-  #     - "3001:3001"
-  #     - "3355:3355"
-  #     - "8288:8288"
-  #   environment:
-  #     - SERVER_PORT=3001
-  #     - JWT_SECRET=25cbbab2-97d3-4e85-bd75-b2c927a8bd5f
-  #     - INNGEST_EVENT_KEY=background_workers
-  #     - INNGEST_SIGNING_KEY=25cbbab2-97d3-4e85-bd75-b2c927a8bd5f
-  #     - INNGEST_LANDING_PAGE=true
-  #     - DATABASE_CONNECTION_STRING=postgresql://appuser:adminPassword@host.docker.internal:5432/vdbms
-  #   depends_on:
-  #     - chromadb
-  #   volumes:
-  #     - vectoradmin-data:/app/backend/storage
-  #   networks:
-  #     - database-net
+  ollama:
+    container_name: ollama
+    image: ollama/ollama:0.4.2
+    restart: always
+    volumes:
+      - ollama:/root/.ollama
+    ports:
+      - 11434:11434
+    # models to download: ollama pull nomic-embed-text llama3.2 phi3.5
 
   qdrant:
     container_name: qdrant
@@ -55,8 +34,7 @@ services:
 volumes:
   open-webui:
   qdrant-data:
-  # vectoradmin-data:
-  # chroma-data:
+  ollama:
 # networks:
 #   database-net:
 #     name: database_network
