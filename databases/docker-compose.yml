@@ -35,14 +35,14 @@ services:
           memory: 2G
 
   postgres-server:
-    image: postgres:15.3-alpine
+    image: postgres:17.2-alpine
     container_name: postgres-server
     restart: always
     environment:
       - POSTGRES_USER=appuser
       - POSTGRES_PASSWORD=adminPassword
       - POSTGRES_DB=postgres
-      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C --locale-provider=icu --icu-locale=C --locale=en_US.UTF-8
+      # - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C --locale-provider=icu --icu-locale=C --locale=en_US.UTF-8
     ports:
       - 5433:5432
     volumes:
@@ -78,7 +78,7 @@ services:
     container_name: redis-server
     restart: always
     ports:
-      - 6379:6379
+      - 6380:6379
     volumes:
       - redis-data:/data
     deploy:
@@ -90,12 +90,13 @@ services:
       - database_net
 
   garnet:
-    image: "ghcr.io/microsoft/garnet"
+    image: "ghcr.io/microsoft/garnet:1.0.57"
+    container_name: garnet-server
     restart: always
     ulimits:
       memlock: -1
     ports:
-      - "6380:6379"
+      - "6379:6379"
     # To avoid docker NAT, consider `host` mode.
     # https://docs.docker.com/compose/compose-file/compose-file-v3/#network_mode
     # network_mode: "host"
