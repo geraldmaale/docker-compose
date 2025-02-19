@@ -1,291 +1,309 @@
 ---
-version: "3"
+version: "3.9"
+x-default-logging: &logging
+  driver: "json-file"
+  options:
+    max-size: "5m"
+    max-file: "2"
 
 networks:
-  loki:
+  default:
+    name: grafana-opentel
+    driver: bridge
+  proxy:
+    external: true
 
 services:
-  read:
-    image: grafana/loki:2.7.3
-    container_name: loki-read
-    command: "-config.file=/etc/loki/config.yaml -target=read"
-    restart: always
-    ports:
-      - 3101:3100
-      - 7946
-      - 9095
-    volumes:
-      - ./loki-config.yaml:/etc/loki/config.yaml
-      # - loki-data:/etc/loki/config.yaml
-    depends_on:
-      - minio
-    healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks: &loki-dns
-      loki:
-        aliases:
-          - loki
-
-  write:
-    image: grafana/loki:2.7.3
-    container_name: loki-write
-    command: "-config.file=/etc/loki/config.yaml -target=write"
-    restart: always
-    ports:
-      - 3102:3100
-      - 7946
-      - 9095
-    volumes:
-      - ./loki-config.yaml:/etc/loki/config.yaml
-      # - loki-data:/etc/loki/config.yaml
-    healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    depends_on:
-      - minio
-    networks:
-      <<: *loki-dns
-
-  promtail:
-    image: grafana/promtail:2.7.3
-    container_name: promtail
-    volumes:
-      - ./promtail-local-config.yaml:/etc/promtail/config.yaml:ro
-      # - promtail-data:/etc/promtail/config.yaml:ro
-      - /var/run/docker.sock:/var/run/docker.sock
-    command: -config.file=/etc/promtail/config.yaml
-    restart: always
-    depends_on:
-      - gateway
-    networks:
-      - loki
-
-  minio:
-    image: minio/minio
-    container_name: minio
-    restart: always
-    entrypoint:
-      - sh
-      - -euc
-      - |
-        mkdir -p /data/loki-data && \
-        mkdir -p /data/loki-ruler && \
-        minio server /data
-    environment:
-      - MINIO_ACCESS_KEY=loki
-      - MINIO_SECRET_KEY=supersecret
-      - MINIO_PROMETHEUS_AUTH_TYPE=public
-      - MINIO_UPDATE=off
-    ports:
-      - 9000
-    volumes:
-      - minio-data:/data
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
-      interval: 15s
-      timeout: 20s
-      retries: 5
-    networks:
-      - loki
-
   grafana:
-    image: grafana/grafana-enterprise:9.3.6
+    image: grafana/grafana:10.0.8
     container_name: grafana
     restart: always
     environment:
       - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
-      - "GF_LOG_MODE=console file"
-    depends_on:
-      - gateway
-    entrypoint:
-      - sh
-      - -euc
-      - |
-        mkdir -p /etc/grafana/provisioning/datasources
-        cat <<EOF > /etc/grafana/provisioning/datasources/ds.yaml
-        apiVersion: 1
-        datasources:
-          - name: Loki
-            type: loki
-            access: proxy
-            url: http://gateway:3100
-            jsonData:
-              httpHeaderName1: "X-Scope-OrgID"
-            secureJsonData:
-              httpHeaderValue1: "tenant1"
-        EOF
-        /run.sh
-    ports:
-      - "3000:3000"
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
+      - GF_LOG_MODE=console
+      - GF_LOG_LEVEL=critical
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=adminPassword
+      # - GF_INSTALL_PLUGINS=flant-statusmap-panel,grafana-piechart-panel
+    # ports:
+    #   - "3000:3000"
     healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1" ]
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - loki
     volumes:
-      # - ./.data/grafana:/var/lib/grafana
+      - ./datasource/datasources.yaml:/etc/grafana/provisioning/datasources/ds.yaml
+      - ./dashboard.yml:/etc/grafana/provisioning/dashboards/main.yaml
+      - ./dashboards:/var/lib/grafana/dashboards
       - grafana-data:/var/lib/grafana
-
-  gateway:
-    image: nginx:latest
-    container_name: gateway
-    restart: always
     depends_on:
-      - read
-      - write
-    entrypoint:
-      - sh
-      - -euc
-      - |
-        cat <<EOF > /etc/nginx/nginx.conf
-        user  nginx;
-        worker_processes  5;  ## Default: 1
+      - loki
+      - tempo
+    deploy:
+      resources:
+        limits:
+          memory: 150M
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana.entrypoints=http"
+      - "traefik.http.routers.grafana.rule=Host(`grafana.ideaslab.com`)"
+      - "traefik.http.middlewares.grafana-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.grafana.middlewares=grafana-https-redirect"
+      - "traefik.http.routers.grafana-secure.entrypoints=https"
+      - "traefik.http.routers.grafana-secure.rule=Host(`grafana.ideaslab.com`)"
+      - "traefik.http.routers.grafana-secure.tls=true"
+      - "traefik.http.routers.grafana-secure.tls.certresolver=staging"
+      - "traefik.http.routers.grafana-secure.service=grafana"
+      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+      - "traefik.docker.network=proxy"
 
-        events {
-          worker_connections   1000;
-        }
+  #  grafana-agent:
+  #    image: grafana/agent:latest
+  #    container_name: grafana-agent
+  #    restart: always
+  #    command: "-config.file=/etc/agent-config.yaml"
+  #    volumes:
+  #      - ./agent-config.yaml:/etc/agent-config.yaml
+  #      - agent-data:/etc/agent/data
 
-        http {
-          resolver 127.0.0.11;
-
-          server {
-            listen             3100;
-
-            location = / {
-              return 200 'OK';
-              auth_basic off;
-            }
-
-            location = /api/prom/push {
-              proxy_pass       http://write:3100\$$request_uri;
-            }
-
-            location = /api/prom/tail {
-              proxy_pass       http://read:3100\$$request_uri;
-              proxy_set_header Upgrade \$$http_upgrade;
-              proxy_set_header Connection "upgrade";
-            }
-
-            location ~ /api/prom/.* {
-              proxy_pass       http://read:3100\$$request_uri;
-            }
-
-            location = /loki/api/v1/push {
-              proxy_pass       http://write:3100\$$request_uri;
-            }
-
-            location = /loki/api/v1/tail {
-              proxy_pass       http://read:3100\$$request_uri;
-              proxy_set_header Upgrade \$$http_upgrade;
-              proxy_set_header Connection "upgrade";
-            }
-
-            location ~ /loki/api/.* {
-              proxy_pass       http://read:3100\$$request_uri;
-            }
-          }
-        }
-        EOF
-        /docker-entrypoint.sh nginx -g "daemon off;"
+  loki:
+    image: grafana/loki:2.9.1
+    container_name: loki
+    restart: always
     ports:
       - "3100:3100"
-    healthcheck:
-      test: ["CMD", "service", "nginx", "status"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - loki
+    command: -config.file=/etc/loki/local-config.yaml
+    deploy:
+      resources:
+        limits:
+          memory: 100M
 
-  flog:
-    image: mingrammer/flog
-    container_name: flog
+  promtail:
+    image: grafana/promtail:2.8.2
     restart: always
-    command: -f json -d 1s -l
-    networks:
-      - loki
+    container_name: promtail
+    volumes:
+      - ./promtail-local-config.yaml:/etc/promtail/config.yaml:ro
+      - /var/log/journal:/var/log/journal
+      - /run/log/journal:/run/log/journal
+      - /etc/machine-id:/etc/machine-id
+    command: -config.file=/etc/promtail/config.yml
+    deploy:
+      resources:
+        limits:
+          memory: 100M
 
-  jaeger:
-    image: jaegertracing/all-in-one:1.42
-    container_name: jaeger
-    restart: always
-    environment:
-      - COLLECTOR_ZIPKIN_HOST_PORT=:9411
-      - COLLECTOR_OTLP_ENABLED=true
-    ports:
-      - "6831:6831/udp"
-      - "6832:6832/udp"
-      - "5778:5778"
-      - "16686:16686"
-      - "16685:16685"
-      - "4317:4317"
-      - "4318:4318"
-      - "14250:14250"
-      - "14268:14268"
-      - "14269:14269"
-      - "9411:9411"
-    networks:
-      - loki
-
-  # zipkin:
-  #   image: openzipkin/zipkin
-  #   container_name: zipkin
+  # flog:
+  #   image: mingrammer/flog
+  #   container_name: flog
   #   restart: always
+  #   command: -f json -d 1s -l
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 100M
+
+  # jaeger:
+  #   image: jaegertracing/all-in-one:1.49
+  #   container_name: jaeger
+  #   restart: always
+  #   environment:
+  #     - COLLECTOR_ZIPKIN_HOST_PORT=:9411
+  #     - COLLECTOR_OTLP_ENABLED=true
   #   ports:
-  #     - "9411:9411"
-  #   networks:
-  #     - loki
+  #     - "6831:6831/udp"
+  #     - "6832:6832/udp"
+  #     - "5778:5778"
+  #     - "16686:16686"
+  #     - "16685:16685"
+  #     - "14250:14250"
+  #     - "14268:14268"
+  #     - "14269:14269"
+  #     - "4417:4317"
+  #     - "4418:4318"
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 100M
+  #   logging: *logging
+
+  zipkin:
+    image: openzipkin/zipkin:2.24
+    container_name: zipkin
+    restart: always
+    ports:
+      - "9411:9411"
+    deploy:
+      resources:
+        limits:
+          memory: 350M
+    logging: *logging
+    networks:
+      - proxy
 
   prometheus:
-    image: prom/prometheus
+    image: quay.io/prometheus/prometheus:v2.47.0
     container_name: prometheus
     restart: always
     ports:
       - "9090:9090"
+    command:
+      - --web.console.templates=/etc/prometheus/consoles
+      - --web.console.libraries=/etc/prometheus/console_libraries
+      - --storage.tsdb.retention.time=1h
+      - --config.file=/etc/prometheus/prometheus-config.yaml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+      - --web.route-prefix=/
+      - --enable-feature=exemplar-storage
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-      # - ./.data/prometheus:/prometheus
+      - ./prometheus-config.yml:/etc/prometheus/prometheus-config.yaml
       - prometheus-data:/prometheus
+    deploy:
+      resources:
+        limits:
+          memory: 350M
+    logging: *logging
     networks:
-      - loki
+      - proxy
 
-  otel:
-    image: otel/opentelemetry-collector-contrib-dev:latest
-    container_name: otel
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    restart: always
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.rootfs=/rootfs"
+      - "--path.sysfs=/host/sys"
+      - "--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)"
+    expose:
+      - 9100
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    deploy:
+      resources:
+        limits:
+          memory: 250M
+
+  otelcol:
+    image: otel/opentelemetry-collector-contrib:0.85.0
+    container_name: otelcol
     restart: always
     command: ["--config=/etc/otel-collector-config.yaml"]
     volumes:
       - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
-      # - ./output:/etc/output:rw # Store the logs
-      - ./logs:/etc/output:rw
-      # - ./logs:/etc/output/logs.json
     ports:
-      - "1888:1888"   # pprof extension
-      - "8888:8888"   # Prometheus metrics exposed by the collector
-      - "8889:8889"   # Prometheus exporter metrics
+      - "1888:1888" # pprof extension
+      - "8888:8888" # Prometheus metrics exposed by the collector
+      - "8889:8889" # Prometheus exporter metrics
+      - "9464" # Prometheus exporter
       - "13133:13133" # health_check extension
-      # - "4317:4317"   # OTLP gRPC receiver
-      # - "4318:4318"   # OTLP http receiver
+      - "4317:4317" # OTLP gRPC receiver
+      - "4318:4318" # OTLP http receiver
+      - "9201:9201" # Tempo receiver
+      - "14268" # jaeger ingest
       - "55679:55679" # zpages extension
+      - "3500:3500" # loki receiver HTTP
     depends_on:
-      - jaeger
-    networks:
-      - loki
+      - zipkin
+    deploy:
+      resources:
+        limits:
+          memory: 125M
+    logging: *logging
+
+  # Minio is used as a object storage for Tempo
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    restart: always
+    environment:
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=adminPassword
+      - MINIO_PROMETHEUS_AUTH_TYPE=public
+      - MINIO_UPDATE=off
+    ports:
+      - "9001:9001"
+    entrypoint:
+      - sh
+      - -euc
+      - |
+        mkdir -p /data/tempo && \
+        mkdir -p /data/loki-data && \
+        mkdir -p /data/loki-ruler && \
+        /opt/bin/minio server --quiet /data --console-address ":9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9001/minio/health/live"]
+      interval: 15s
+      timeout: 20s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 250M
+
+  # Exports Traces to Tempo
+  tempo:
+    image: grafana/tempo:latest
+    container_name: tempo
+    command: ["-config.file=/etc/tempo.yaml"]
+    restart: always
+    volumes:
+      - ./tempo-s3.yaml:/etc/tempo.yaml
+      - tempo-data:/tmp/tempo
+    ports:
+      - "3200:3200" # tempo
+      - "4317" # otlp grpc
+      - "4318" # otlp http
+      - "14268" # jaeger ingest
+      - "9411" # zipkin ingest
+    depends_on:
+      - minio
+    deploy:
+      resources:
+        limits:
+          memory: 250M
+    logging: *logging
+
+  cadvisor:
+    image: gematt/cadvisor:v0.47.2
+    container_name: cadvisor
+    restart: always
+    ports:
+      - "8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+      - /etc/machine-id:/etc/machine-id:ro
+    devices:
+      - /dev/kmsg
+    deploy:
+      resources:
+        limits:
+          memory: 125M
+    logging: *logging
 
 volumes:
   grafana-data:
   prometheus-data:
-  otel-data:
+  tempo-data:
   minio-data:
-  promtail-data:
-
-# docker run -d --name jaeger -e COLLECTOR_ZIPKIN_HOST_PORT=:9411 -e COLLECTOR_OTLP_ENABLED=true -p 6831:6831/udp -p 6832:6832/udp -p 5778:5778 -p 16686:16686 -p 4317:4317 -p 4318:4318 -p 14250:14250 -p 14268:14268 -p 14269:14269 -p 9411:9411 jaegertracing/all-in-one:1.42
+  agent-data:

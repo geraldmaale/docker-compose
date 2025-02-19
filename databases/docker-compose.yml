@@ -1,0 +1,118 @@
+services:
+  # mariadb-server:
+  #   image: mariadb
+  #   container_name: Mariadb-Server
+  #   # command: --default-authentication-plugin=mysql_native_password
+  #   restart: on-failure
+  #   command: --lower_case_table_names=2
+  #   environment:
+  #     - MYSQL_USER=appuser
+  #     - MYSQL_PASSWORD=P@ssword1
+  #     - MYSQL_ROOT_PASSWORD=P@ssword1
+  #     # - MYSQL_DATABASE=DockerTest-Dev
+  #   ports:
+  #     - 3306:3306
+  #   volumes:
+  #   - mariadb:/var/lib/mysql
+
+  mssql-server:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: mssql-server
+    restart: always
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=adminPassword2022
+      - MSSQL_PID=Express
+    ports:
+      - 1433:1433
+    volumes:
+      - mssql-data:/var/opt/mssql
+    networks:
+      - database_net
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+
+  postgres-server:
+    image: postgres:17.2-alpine
+    container_name: postgres-server
+    restart: always
+    environment:
+      - POSTGRES_USER=appuser
+      - POSTGRES_PASSWORD=adminPassword
+      - POSTGRES_DB=postgres
+      # - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C --locale-provider=icu --icu-locale=C --locale=en_US.UTF-8
+    ports:
+      - 5433:5432
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - database_net
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  mongodb-server:
+    image: mongodb/mongodb-community-server:7.0.7-ubuntu2204
+    container_name: mongo-server
+    restart: always
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=appuser
+      - MONGO_INITDB_ROOT_PASSWORD=adminPassword
+    ports:
+      - 27017:27017
+    volumes:
+      - mongo-data:/data/db
+    deploy:
+      resources:
+        limits:
+          memory: 200M
+    networks:
+      - database_net
+
+  redis-server:
+    image: redis:7.4.0
+    container_name: redis-server
+    restart: always
+    ports:
+      - 6380:6379
+    volumes:
+      - redis-data:/data
+    deploy:
+      resources:
+        limits:
+          memory: 500M
+    command: redis-server --requirepass adminPassword
+    networks:
+      - database_net
+
+  garnet:
+    image: "ghcr.io/microsoft/garnet:1.0.57"
+    container_name: garnet-server
+    restart: always
+    ulimits:
+      memlock: -1
+    ports:
+      - "6379:6379"
+    # To avoid docker NAT, consider `host` mode.
+    # https://docs.docker.com/compose/compose-file/compose-file-v3/#network_mode
+    # network_mode: "host"
+    volumes:
+      - garnet-data:/data
+    networks:
+      - database_net
+
+volumes:
+  mssql-data:
+  pgdata:
+  mongo-data:
+  redis-data:
+  garnet-data:
+
+networks:
+  database_net:
+    name: database_net
+    driver: bridge

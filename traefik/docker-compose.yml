@@ -1,0 +1,42 @@
+version: "3.3"
+
+services:
+  traefik:
+    image: "traefik:v2.11"
+    container_name: "traefik"
+    restart: always
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - proxy
+    ports:
+      - "80:80"
+      - "443:443"
+      - "18080:8080"
+    volumes:
+      - ".letsencrypt:/letsencrypt"
+      - "./config/traefik.yml:/traefik.yml:ro"
+      - "./config/config.yml:/config.yml:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.entrypoints=http"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.ideaslab.com`)"
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=geraldmaale@gmail.com:$$apr1$$tSgdFvEU$$wtMyhIhvKN3xYDocs8byV/"
+      - "traefik.http.middlewares.traefik-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.traefik.middlewares=traefik-https-redirect"
+      - "traefik.http.routers.traefik-secure.middlewares=traefik-auth"
+      - "traefik.http.routers.traefik-secure.entrypoints=https"
+      - "traefik.http.routers.traefik-secure.rule=Host(`traefik.ideaslab.com`)"
+      - "traefik.http.routers.traefik-secure.tls=true"
+      - "traefik.http.routers.traefik-secure.tls.certresolver=staging"
+      - "traefik.http.routers.traefik-secure.service=api@internal"
+      - "traefik.http.services.traefik.loadbalancer.server.port=8080"
+
+networks:
+  proxy:
+    name: proxy
+    driver: bridge

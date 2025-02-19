@@ -1,0 +1,218 @@
+services:
+  portainer:
+    image: portainer/portainer-ce:2.20.0
+    container_name: portainer
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - proxy
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - portainer_data:/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.portainer.entrypoints=http"
+      - "traefik.http.routers.portainer.rule=Host(`portainer.ideaslab.com`)"
+      - "traefik.http.middlewares.portainer-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.portainer.middlewares=portainer-https-redirect"
+      - "traefik.http.routers.portainer-secure.entrypoints=https"
+      - "traefik.http.routers.portainer-secure.rule=Host(`portainer.ideaslab.com`)"
+      - "traefik.http.routers.portainer-secure.tls=true"
+      - "traefik.http.routers.portainer-secure.tls.certresolver=staging"
+      - "traefik.http.routers.portainer-secure.service=portainer"
+      - "traefik.http.services.portainer.loadbalancer.server.port=9000"
+      - "traefik.docker.network=proxy"
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    restart: always
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=gematmail@gmail.com
+      - PGADMIN_DEFAULT_PASSWORD=adminPassword
+    networks:
+      - proxy
+    volumes:
+      - pgadmin_data:/root/.pgadmin
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pgadmin.entrypoints=http"
+      - "traefik.http.routers.pgadmin.rule=Host(`pgadmin.ideaslab.com`)"
+      - "traefik.http.middlewares.pgadmin-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.pgadmin.middlewares=pgadmin-https-redirect"
+      - "traefik.http.routers.pgadmin-secure.entrypoints=https"
+      - "traefik.http.routers.pgadmin-secure.rule=Host(`pgadmin.ideaslab.com`)"
+      - "traefik.http.routers.pgadmin-secure.tls=true"
+      - "traefik.http.routers.pgadmin-secure.tls.certresolver=staging"
+      - "traefik.http.routers.pgadmin-secure.service=pgadmin"
+      - "traefik.http.services.pgadmin.loadbalancer.server.port=80"
+      - "traefik.docker.network=proxy"
+
+  uptime-kuma:
+    image: louislam/uptime-kuma:latest
+    container_name: uptime-kuma
+    restart: always
+    networks:
+      - proxy
+    volumes:
+      - uptime_kuma_data:/app/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.uptime-kuma.entrypoints=http"
+      - "traefik.http.routers.uptime-kuma.rule=Host(`uptime-kuma.ideaslab.com`)"
+      - "traefik.http.middlewares.uptime-kuma-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.uptime-kuma.middlewares=uptime-kuma-https-redirect"
+      - "traefik.http.routers.uptime-kuma-secure.entrypoints=https"
+      - "traefik.http.routers.uptime-kuma-secure.rule=Host(`uptime-kuma.ideaslab.com`)"
+      - "traefik.http.routers.uptime-kuma-secure.tls=true"
+      - "traefik.http.routers.uptime-kuma-secure.tls.certresolver=staging"
+      - "traefik.http.routers.uptime-kuma-secure.service=uptime-kuma"
+      - "traefik.http.services.uptime-kuma.loadbalancer.server.port=3001"
+      - "traefik.docker.network=proxy"
+
+  seq:
+    image: datalust/seq:2024.3
+    container_name: seq-server
+    restart: always
+    environment:
+      - ACCEPT_EULA=Y
+      - SEQ_API_CANONICALURI=https://seq.ideaslab.com
+      - SEQ_FIRSTRUN_ADMINPASSWORDHASH="$PH"
+    volumes:
+      - seq_data:/data
+    networks:
+      - proxy
+    ports:
+      - 5555:80
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.seq.entrypoints=http"
+      - "traefik.http.routers.seq.rule=Host(`seq.ideaslab.com`)"
+      - "traefik.http.middlewares.seq-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.seq.middlewares=seq-https-redirect"
+      - "traefik.http.routers.seq-secure.entrypoints=https"
+      - "traefik.http.routers.seq-secure.rule=Host(`seq.ideaslab.com`)"
+      - "traefik.http.routers.seq-secure.tls=true"
+      - "traefik.http.routers.seq-secure.tls.certresolver=staging"
+      - "traefik.http.routers.seq-secure.service=seq"
+      - "traefik.http.services.seq.loadbalancer.server.port=80"
+      - "traefik.docker.network=proxy"
+
+  heimdall:
+    image: linuxserver/heimdall:2.5.6
+    container_name: heimdall
+    restart: always
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Shanghai
+    volumes:
+      - ./heimdall/config:/config
+    # ports:
+    #   - 7080:80
+    #   - 7443:443
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.heimdall.entrypoints=http"
+      - "traefik.http.routers.heimdall.rule=Host(`heimdall.ideaslab.com`)"
+      - "traefik.http.middlewares.heimdall-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.heimdall.middlewares=heimdall-https-redirect"
+      - "traefik.http.routers.heimdall-secure.entrypoints=https"
+      - "traefik.http.routers.heimdall-secure.rule=Host(`heimdall.ideaslab.com`)"
+      - "traefik.http.routers.heimdall-secure.tls=true"
+      - "traefik.http.routers.heimdall-secure.tls.certresolver=staging"
+      - "traefik.http.routers.heimdall-secure.service=heimdall"
+      - "traefik.http.services.heimdall.loadbalancer.server.port=80"
+      - "traefik.docker.network=proxy"
+
+  sonarqube:
+    image: sonarqube:10.4.1-community
+    container_name: sonarqube
+    restart: always
+    environment:
+      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+      - SONAR_JDBC_URL=jdbc:postgresql://postgres-server:5432/sonar
+      - SONAR_JDBC_USERNAME=appuser
+      - SONAR_JDBC_PASSWORD=adminPassword
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_data:/opt/sonarqube/logs
+      - sonarqube_data:/opt/sonarqube/extensions
+    # ports:
+    #   - 9900:9000
+    networks:
+      - proxy
+      - database_net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.sonar.entrypoints=http"
+      - "traefik.http.routers.sonar.rule=Host(`sonar.ideaslab.com`)"
+      - "traefik.http.middlewares.sonar-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.sonar.middlewares=sonar-https-redirect"
+      - "traefik.http.routers.sonar-secure.entrypoints=https"
+      - "traefik.http.routers.sonar-secure.rule=Host(`sonar.ideaslab.com`)"
+      - "traefik.http.routers.sonar-secure.tls=true"
+      - "traefik.http.routers.sonar-secure.tls.certresolver=staging"
+      - "traefik.http.routers.sonar-secure.service=sonar"
+      - "traefik.http.services.sonar.loadbalancer.server.port=9000"
+      - "traefik.docker.network=proxy"
+
+  rabbitmq:
+    image: rabbitmq:3.12.6-management-alpine
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+    #   - "15672:15672"
+    #   - "15692:15692"
+    hostname: rabbitmq-server
+    restart: always
+    networks:
+      - proxy
+    environment:
+      - RABBITMQ_DEFAULT_USER=appuser
+      - RABBITMQ_DEFAULT_PASS=adminPassword
+    cap_add:
+      - ALL
+    ulimits:
+      nofile:
+        soft: 2000
+        hard: 2000
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.rabbitmq.entrypoints=http
+      - traefik.http.routers.rabbitmq.rule=Host(`rabbitmq.ideaslab.com`)
+      - traefik.http.middlewares.rabbitmq-https-redirect.redirectscheme.scheme=https
+      - traefik.http.routers.rabbitmq.middlewares=rabbitmq-https-redirect
+      - traefik.http.routers.rabbitmq-secure.entrypoints=https
+      - traefik.http.routers.rabbitmq-secure.rule=Host(`rabbitmq.ideaslab.com`)
+      - traefik.http.routers.rabbitmq-secure.tls=true
+      - traefik.http.routers.rabbitmq-secure.tls.certresolver=staging
+      - traefik.http.routers.rabbitmq-secure.service=rabbitmq
+      - traefik.http.services.rabbitmq.loadbalancer.server.port=15672
+      - traefik.docker.network=proxy
+
+networks:
+  proxy:
+    external: true
+  database_net:
+    external: true
+  internal:
+    external: false
+
+volumes:
+  portainer_data:
+  pgadmin_data:
+  uptime_kuma_data:
+  seq_data:
+  sonarqube_data:
+  rabbitmq_data:

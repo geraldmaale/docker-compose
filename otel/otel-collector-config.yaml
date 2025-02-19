@@ -1,0 +1,86 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      
+  loki:
+    protocols:
+      http:
+    use_incoming_timestamp: true
+
+  jaeger:
+    protocols:
+      grpc:
+      thrift_binary:
+      thrift_compact:
+      thrift_http:
+ 
+exporters:  
+  otlp:
+    endpoint: "tempo:4317"
+    tls:
+      insecure: true
+       
+  loki:
+    endpoint: http://loki:3100/loki/api/v1/push
+
+  zipkin:
+    endpoint: "http://zipkin:9411/api/v2/spans"
+    tls:
+      insecure: true
+
+  prometheus:
+    endpoint: "otelcol:9201"
+    resource_to_telemetry_conversion:
+      enabled: true
+    enable_open_metrics: true
+
+  logging:
+    verbosity: detailed
+    sampling_initial: 1
+    sampling_thereafter: 1
+
+processors:
+  batch:
+  filter:
+    metrics:
+      exclude:
+        match_type: strict
+        metric_names:
+          - queueSize
+  attributes: # Send logs with container label to Loki
+    actions:
+      - action: insert
+        key: loki.attribute.labels
+        value: container
+      - action: insert
+        key: loki.format
+        value: raw
+
+extensions:
+  health_check:
+  pprof:
+    endpoint: :1888
+  zpages:
+    endpoint: :55679
+
+service:
+  extensions: [pprof, zpages, health_check]
+  telemetry:
+    logs:
+      level: info
+    metrics:
+      level: none
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [logging,zipkin,otlp]
+    metrics:
+      receivers: [otlp]
+      processors: [filter,batch]
+      exporters: [prometheus,logging]
+    logs:
+      receivers: [otlp,loki]
+      processors: [batch,attributes]
+      exporters: [logging,loki]

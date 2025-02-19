@@ -1,0 +1,170 @@
+---
+version: "3.9"
+x-default-logging: &logging
+  driver: "json-file"
+  options:
+    max-size: "5m"
+    max-file: "2"
+
+networks:
+  default:
+    name: otel
+    driver: bridge
+  proxy:
+    external: true
+
+services:
+  jaeger:
+    image: jaegertracing/all-in-one:1.49
+    container_name: jaeger
+    restart: always
+    environment:
+      - COLLECTOR_ZIPKIN_HOST_PORT=:9411
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - "6831:6831/udp"
+      - "6832:6832/udp"
+      - "5778:5778"
+      - "16686:16686"
+      - "16685:16685"
+      - "14250:14250"
+      - "14268:14268"
+      - "14269:14269"
+      - "4417:4317"
+      - "4418:4318"
+    deploy:
+      resources:
+        limits:
+          memory: 100M
+    logging: *logging
+    networks:
+      - proxy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.jaeger.entrypoints=http
+      - traefik.http.routers.jaeger.rule=Host(`jaeger.ideaslab.com`)
+      - traefik.http.middlewares.jaeger-https-redirect.redirectscheme.scheme=https
+      - traefik.http.routers.jaeger.middlewares=jaeger-https-redirect
+      - traefik.http.routers.jaeger-secure.entrypoints=https
+      - traefik.http.routers.jaeger-secure.rule=Host(`jaeger.ideaslab.com`)
+      - traefik.http.routers.jaeger-secure.tls=true
+      - traefik.http.routers.jaeger-secure.tls.certresolver=staging
+      - traefik.http.routers.jaeger-secure.service=jaeger
+      - traefik.http.services.jaeger.loadbalancer.server.port=16686
+      - traefik.docker.network=proxy
+
+  zipkin:
+    image: openzipkin/zipkin:2.24
+    container_name: zipkin
+    restart: always
+    ports:
+      - "9411:9411"
+    deploy:
+      resources:
+        limits:
+          memory: 350M
+    logging: *logging
+    networks:
+      - proxy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.zipkin.entrypoints=http
+      - traefik.http.routers.zipkin.rule=Host(`zipkin.ideaslab.com`)
+      - traefik.http.middlewares.zipkin-https-redirect.redirectscheme.scheme=https
+      - traefik.http.routers.zipkin.middlewares=zipkin-https-redirect
+      - traefik.http.routers.zipkin-secure.entrypoints=https
+      - traefik.http.routers.zipkin-secure.rule=Host(`zipkin.ideaslab.com`)
+      - traefik.http.routers.zipkin-secure.tls=true
+      - traefik.http.routers.zipkin-secure.tls.certresolver=staging
+      - traefik.http.routers.zipkin-secure.service=zipkin
+      - traefik.http.services.zipkin.loadbalancer.server.port=9411
+      - traefik.docker.network=proxy
+
+  prometheus:
+    image: quay.io/prometheus/prometheus:v2.47.0
+    container_name: prometheus
+    restart: always
+    ports:
+      - "9090:9090"
+    command:
+      - --web.console.templates=/etc/prometheus/consoles
+      - --web.console.libraries=/etc/prometheus/console_libraries
+      - --storage.tsdb.retention.time=1h
+      - --config.file=/etc/prometheus/prometheus-config.yaml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+      - --web.route-prefix=/
+      - --enable-feature=exemplar-storage
+    volumes:
+      - ./prometheus-config.yml:/etc/prometheus/prometheus-config.yaml
+      - prometheus-data:/prometheus
+    deploy:
+      resources:
+        limits:
+          memory: 350M
+    logging: *logging
+    networks:
+      - proxy
+
+  otelcol:
+    image: otel/opentelemetry-collector-contrib:0.85.0
+    container_name: otelcol
+    restart: always
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "1888:1888" # pprof extension
+      - "8888:8888" # Prometheus metrics exposed by the collector
+      - "8889:8889" # Prometheus exporter metrics
+      - "9464" # Prometheus exporter
+      - "13133:13133" # health_check extension
+      # - "4317:4317" # OTLP gRPC receiver
+      - "4318:4318" # OTLP http receiver
+      - "9201:9201" # Tempo receiver
+      - "14268" # jaeger ingest
+      - "55679:55679" # zpages extension
+      - "3500:3500" # loki receiver HTTP
+    depends_on:
+      - zipkin
+    deploy:
+      resources:
+        limits:
+          memory: 125M
+    logging: *logging
+
+  aspire:
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:9
+    container_name: aspire-dashboard
+    restart: always
+    ports:
+      - "4317:18889"
+    environment:
+      - DASHBOARD__TELEMETRYLIMITS__MAXLOGCOUNT=20000
+      - DASHBOARD__TELEMETRYLIMITS__MAXTRACECOUNT=20000
+      - DASHBOARD__TELEMETRYLIMITS__MAXMETRICSCOUNT=20000
+      - DASHBOARD__FRONTEND_AUTHMODE=BrowserToken # OpenIdConnect/Unsecured
+      - DASHBOARD__FRONTEND_BROWSERTOKEN=93326466479843b4a2ebd7170faecb92
+    deploy:
+      resources:
+        limits:
+          memory: 350M
+    logging: *logging
+    networks:
+      - proxy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.aspire.entrypoints=http
+      - traefik.http.routers.aspire.rule=Host(`aspire.ideaslab.com`)
+      - traefik.http.middlewares.aspire-https-redirect.redirectscheme.scheme=https
+      - traefik.http.routers.aspire.middlewares=aspire-https-redirect
+      - traefik.http.routers.aspire-secure.entrypoints=https
+      - traefik.http.routers.aspire-secure.rule=Host(`aspire.ideaslab.com`)
+      - traefik.http.routers.aspire-secure.tls=true
+      - traefik.http.routers.aspire-secure.tls.certresolver=staging
+      - traefik.http.routers.aspire-secure.service=aspire
+      - traefik.http.services.aspire.loadbalancer.server.port=18888
+      - traefik.docker.network=proxy
+
+volumes:
+  prometheus-data:

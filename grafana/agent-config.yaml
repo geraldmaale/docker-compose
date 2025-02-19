@@ -1,0 +1,21 @@
+﻿traces:
+  configs:
+    - name: default
+      automatic_logging: 
+        backend: stdout
+        loki_name: loki
+        spans: true
+      receivers:
+        jaeger:
+          protocols:
+            thrift_http:
+              
+metrics:
+  global:
+    scrape_interval: 1m
+  configs:
+    - name: agent
+      scrape_configs:
+        - job_name: agent
+          static_configs:
+            - targets: ['127.0.0.1:12345']
