@@ -1,0 +1,59 @@
+---
+services:
+  postgres:
+    image: postgres:17.2-alpine
+    container_name: keycloak-postgres
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: adminPassword
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - identity-network
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.1.2
+    container_name: keycloak
+    command: ["start-dev"]
+    environment:
+      # KC_DB: postgres
+      # KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: adminPassword
+    ports:
+      - "8080:8080"
+      - "8443:8443"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+      # Uncomment for custom themes
+      # - ./themes:/opt/keycloak/themes/custom
+      # Uncomment to provide custom realm config
+      # - ./realm-export.json:/opt/keycloak/data/import/realm-export.json
+    networks:
+      - identity-network
+    restart: unless-stopped
+    # healthcheck:
+    #   test: ["CMD", "curl", "--fail", "http://localhost:8080/health/ready"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
+    #   start_period: 30s
+
+volumes:
+  postgres_data:
+    name: keycloak-postgres-data
+  keycloak_data:
+    name: keycloak-data
+
+networks:
+  identity-network:
+    name: identity-network
