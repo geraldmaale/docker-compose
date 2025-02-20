@@ -1,0 +1,15 @@
+@baseUrl = http://localhost:8080
+@realm = CEP
+@tokenEndpoint = {{baseUrl}}/realms/{{realm}}/protocol/openid-connect/token
+
+### Get Access Token
+POST {{tokenEndpoint}}
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&username=gematt&password=adminPassword&client_id=cep-mccoy-web
+
+### REFRESH TOKEN
+POST {{tokenEndpoint}}
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=refresh_token&&client_id=cep-mccoy-web&refresh_token=eyJhbGciOiJIUzUxMiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJiNWIzOTM3Yi02MDdhLTQ0N2UtYjViZi01MDk4NGRlZTNmZjgifQ.eyJleHAiOjE3NDAwMTQ3ODQsImlhdCI6MTc0MDAxMjk4NCwianRpIjoiOTYyMWQwZmMtY2JiMy00NmE3LTg1MjQtNzAzNWZhYjk0MTI2IiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MDgwL3JlYWxtcy9DRVAiLCJhdWQiOiJodHRwOi8vbG9jYWxob3N0OjgwODAvcmVhbG1zL0NFUCIsInN1YiI6IjVmM2YzMWJkLTk3NjEtNGMyOS1hODgyLTE1MWM4MzI4OTM5MSIsInR5cCI6IlJlZnJlc2giLCJhenAiOiJjZXAtbWNjb3ktd2ViIiwic2lkIjoiY2MxYWYxZWItNmMwNy00NmYxLThlNDktYjI1YTlmMmMyYzA1Iiwic2NvcGUiOiJlbWFpbCByb2xlcyB3ZWItb3JpZ2lucyBhY3IgcHJvZmlsZSBiYXNpYyJ9.y1x61jJ40oYv8tvMeMC1UIkv0Es5qdqpHfjzzdC27-aXTwLdUDgOItMb1fVQ69h-5RorFp8XewNdnUcqZj-sOQ
