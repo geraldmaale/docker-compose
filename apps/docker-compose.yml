@@ -1,53 +1,53 @@
 version: "3.6"
 
 services:
-  # reverse-proxy-server:
-  #   image: jc21/nginx-proxy-manager:latest
-  #   container_name: Reverse-Proxy-Server
-  #   restart: always
-  #   ports:
-  #     - "80:80"
-  #     - "81:81"
-  #     - "443:443"
-  #   volumes:
-  #     - ./data:/data
-  #     - ./letsencrypt:/etc/letsencrypt
-  #   deploy:
-  #     resources:
-  #       limits:
-  #         memory: 200M
-
-  rabbitmq:
-    image: rabbitmq:3.12.6-management-alpine
-    container_name: rabbitmq
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-      - "15692:15692"
-    hostname: rabbitmq-server
+  reverse-proxy-server:
+    image: jc21/nginx-proxy-manager:2.12.6
+    container_name: Reverse-Proxy-Server
     restart: always
-    networks:
-      - traefik-proxy
-    environment:
-      - RABBITMQ_DEFAULT_USER=appuser
-      - RABBITMQ_DEFAULT_PASS=adminPassword
-    cap_add:
-      - ALL
-    ulimits:
-      nofile:
-        soft: 2000
-        hard: 2000
+    ports:
+      - "80:80"
+      - "81:81"
+      - "443:443"
     volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
+      - ./data:/data
+      - ./letsencrypt:/etc/letsencrypt
     deploy:
       resources:
         limits:
-          memory: 300M
-    # labels:
-    #   - traefik.enable=true
+          memory: 200M
+
+  # rabbitmq:
+  #   image: rabbitmq:3.12.6-management-alpine
+  #   container_name: rabbitmq
+  #   ports:
+  #     - "5672:5672"
+  #     - "15672:15672"
+  #     - "15692:15692"
+  #   hostname: rabbitmq-server
+  #   restart: always
+  #   networks:
+  #     - traefik-proxy
+  #   environment:
+  #     - RABBITMQ_DEFAULT_USER=appuser
+  #     - RABBITMQ_DEFAULT_PASS=adminPassword
+  #   cap_add:
+  #     - ALL
+  #   ulimits:
+  #     nofile:
+  #       soft: 2000
+  #       hard: 2000
+  #   volumes:
+  #     - rabbitmq_data:/var/lib/rabbitmq
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 300M
+  # labels:
+  #   - traefik.enable=true
 
   portainer:
-    image: portainer/portainer-ce:2.20.0
+    image: portainer/portainer-ce:2.32.0-alpine
     container_name: portainer
     restart: always
     security_opt:
@@ -102,7 +102,7 @@ services:
   #   - "traefik.enable=true"
 
   seq:
-    image: datalust/seq:2024.3
+    image: datalust/seq:2025.2
     container_name: seq-server
     restart: always
     environment:
@@ -151,7 +151,7 @@ services:
   #     - "traefik.docker.network=traefik-proxy"
 
   sonarqube:
-    image: sonarqube:10.4.1-community
+    image: sonarqube:2025.4.2-developer
     container_name: sonarqube
     restart: always
     environment:
