@@ -1,5 +1,4 @@
 ---
-version: "3.9"
 x-default-logging: &logging
   driver: "json-file"
   options:
@@ -15,7 +14,7 @@ networks:
 
 services:
   jaeger:
-    image: jaegertracing/all-in-one:1.49
+    image: jaegertracing/all-in-one:1.72.0
     container_name: jaeger
     restart: always
     environment:
@@ -54,7 +53,7 @@ services:
       - traefik.docker.network=proxy
 
   zipkin:
-    image: openzipkin/zipkin:2.24
+    image: openzipkin/zipkin:3.5
     container_name: zipkin
     restart: always
     ports:
@@ -81,7 +80,7 @@ services:
       - traefik.docker.network=proxy
 
   prometheus:
-    image: quay.io/prometheus/prometheus:v2.47.0
+    image: quay.io/prometheus/prometheus:v3.5.0
     container_name: prometheus
     restart: always
     ports:
@@ -107,7 +106,7 @@ services:
       - proxy
 
   otelcol:
-    image: otel/opentelemetry-collector-contrib:0.85.0
+    image: otel/opentelemetry-collector-contrib:0.131.1
     container_name: otelcol
     restart: always
     command: ["--config=/etc/otel-collector-config.yaml"]
@@ -134,7 +133,7 @@ services:
     logging: *logging
 
   aspire:
-    image: mcr.microsoft.com/dotnet/aspire-dashboard:9
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:9.4.0
     container_name: aspire-dashboard
     restart: always
     ports:
